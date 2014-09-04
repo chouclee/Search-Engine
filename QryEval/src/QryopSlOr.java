@@ -5,7 +5,7 @@ public class QryopSlOr extends QryopSl {
 
   /**
    * It is convenient for the constructor to accept a variable number of arguments. Thus new
-   * qryopAnd (arg1, arg2, arg3, ...).
+   * qryopOr (arg1, arg2, arg3, ...).
    * 
    * @param q
    *          A query argument (a query operator).
@@ -59,13 +59,7 @@ public class QryopSlOr extends QryopSl {
     allocDaaTPtrs(r);
     QryResult result = new QryResult();
 
-    // Exact-match AND requires that ALL scoreLists contain a
-    // document id. Use the first (shortest) list to control the
-    // search for matches.
-
-    // Named loops are a little ugly. However, they make it easy
-    // to terminate an outer loop from within an inner loop.
-    // Otherwise it is necessary to use flags, which is also ugly.
+    // use hashMap to check whether a DocID has appeared or not.
 
     HashMap<Integer, Double> docidScoreMap = new HashMap<Integer, Double>();
 
@@ -78,8 +72,8 @@ public class QryopSlOr extends QryopSl {
       for (int j = 0; j < ptri.scoreList.scores.size(); j++) {
         ptriDocid = ptri.scoreList.getDocid(j);
 
-        if (!docidScoreMap.containsKey(ptriDocid)) {// if it's not in the hashMap, put it in the
-          // hashMap
+        if (!docidScoreMap.containsKey(ptriDocid)) {
+          // if it's not in the hashMap, put it in the hashMap
           docidScoreMap.put(ptriDocid, docScore);
           result.docScores.add(ptriDocid, docScore);
         }
@@ -120,6 +114,6 @@ public class QryopSlOr extends QryopSl {
     for (int i = 0; i < this.args.size(); i++)
       result += this.args.get(i).toString() + " ";
 
-    return ("#AND( " + result + ")");
+    return ("#OR( " + result + ")");
   }
 }
