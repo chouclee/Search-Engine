@@ -75,12 +75,15 @@ public class QryopSlOr extends QryopSl {
         if (!docidScoreMap.containsKey(ptriDocid)) {
           // if it's not in the hashMap, put it in the hashMap
           docidScoreMap.put(ptriDocid, docScore);
-          result.docScores.add(ptriDocid, docScore);
+
         }
       }
     }
     freeDaaTPtrs();
-
+    ArrayList<Integer> sortedKeys = new ArrayList<Integer>(docidScoreMap.keySet());
+    Collections.sort(sortedKeys);
+    for (int i = 0; i < sortedKeys.size(); i++) 
+      result.docScores.add(sortedKeys.get(i), docidScoreMap.get(sortedKeys.get(i)));
     return result;
   }
 
