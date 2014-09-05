@@ -365,7 +365,8 @@ public class QryEval {
       File file = new File(filePath);
       try { 
         writer = new BufferedWriter(new FileWriter(file, true));
-        for (int i = 0; i < result.docScores.scores.size(); i++) {
+        int numDocs = Math.min(100, result.docScores.scores.size());
+        for (int i = 0; i < numDocs; i++) {
           writer.write(queryID + "\t" + "Q0" + "\t");
           if (result.docScores.scores.size() == 0)
             writer.write("dummy" + "\t" + "1" + "\t" + "0" + "\t" + "run-1\n");
