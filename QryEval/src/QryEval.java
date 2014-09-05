@@ -101,18 +101,14 @@ public class QryEval {
       queries.put(Integer.parseInt(pair[0].trim()), pair[1].trim());
     } while (scan.hasNext());
     scan.close();
-    
-    //evaluate unranked boolean retrieval algorithm
+
+    // evaluate unranked boolean retrieval algorithm
     for (Integer queryID : queriesID) {
       Qryop operation = parseQuery(queries.get(queryID));// retrieve first operation
-      if (operation instanceof QryopSlOr) {
-        System.out.println(queryID + "\t" + queries.get(queryID));
-        //printResults(queryID, operation.evaluate(model));
-        writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
-      }
+      System.out.println(queryID + "\t" + queries.get(queryID));
+      // printResults(queryID, operation.evaluate(model));
+      writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
-    
-    
 
     /*
      * The code below is an unorganized set of examples that show you different ways of accessing
@@ -166,7 +162,6 @@ public class QryEval {
      * specified in the parameter file, and it should write the results that you retrieved above.
      * This code just allows the testing infrastructure to work on QryEval.
      */
- 
 
     // Later HW assignments will use more RAM, so you want to be aware
     // of how much memory your program uses.
@@ -294,7 +289,7 @@ public class QryEval {
         // creating the query term, and you should check to see whether
         // the token specifies a particular field (e.g., apple.title).
         String[] tokenized = tokenizeQuery(token);
-        //System.out.println(tokenized.length);
+        // System.out.println(tokenized.length);
         if (tokenized != null && tokenized.length != 0) {
           token = tokenized[0];
           currentOp.add(new QryopIlTerm(token));
@@ -352,31 +347,37 @@ public class QryEval {
       System.out.print(queryID + "\t" + "Q0" + "\t");
       if (result.docScores.scores.size() == 0)
         System.out.println("dummy" + "\t" + "1" + "\t" + "0" + "\t" + "run-1");
-    else {
-        System.out.println(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i+1) + "\t"
+      else {
+        System.out.println(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i + 1) + "\t"
                 + result.docScores.getDocidScore(i) + "\t" + "run-1");
       }
     }
   }
-  
+
   static void writeTrecEvalFile(String filePath, int queryID, QryResult result) {
-    
-      BufferedWriter writer = null;
-      File file = new File(filePath);
-      try { 
-        writer = new BufferedWriter(new FileWriter(file, true));
-        int numDocs = Math.min(100, result.docScores.scores.size());
-        for (int i = 0; i < numDocs; i++) {
-          writer.write(queryID + "\t" + "Q0" + "\t");
-          if (result.docScores.scores.size() == 0)
-            writer.write("dummy" + "\t" + "1" + "\t" + "0" + "\t" + "run-1\n");
+
+    BufferedWriter writer = null;
+    File file = new File(filePath);
+    try {
+      writer = new BufferedWriter(new FileWriter(file, true));
+      int numDocs = Math.min(100, result.docScores.scores.size());
+      for (int i = 0; i < numDocs; i++) {
+        writer.write(queryID + "\t" + "Q0" + "\t");
+        if (result.docScores.scores.size() == 0)
+          writer.write("dummy" + "\t" + "1" + "\t" + "0" + "\t" + "run-1\n");
         else {
-            writer.write(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i+1) + "\t"
-                    + result.docScores.getDocidScore(i) + "\t" + "run-1\n");
-          }
+          writer.write(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i + 1) + "\t"
+                  + result.docScores.getDocidScore(i) + "\t" + "run-1\n");
         }
-      } catch (Exception e) { e.printStackTrace(); } 
-      finally { try { writer.close(); } catch (Exception e) { } }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        writer.close();
+      } catch (Exception e) {
+      }
+    }
   }
 
   /**

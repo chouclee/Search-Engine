@@ -69,7 +69,7 @@ public class QryopSlAnd extends QryopSl {
     // improves the efficiency of exact-match AND without changing
     // the result.
     // !!!!!Mark : improve it with merge-sort/quick-sort?
-
+/*
     for (int i = 0; i < (this.daatPtrs.size() - 1); i++) {
       for (int j = i + 1; j < this.daatPtrs.size(); j++) {
         if (this.daatPtrs.get(i).scoreList.scores.size() > this.daatPtrs.get(j).scoreList.scores
@@ -80,7 +80,8 @@ public class QryopSlAnd extends QryopSl {
         }
       }
     }
-
+*/
+    Collections.sort(this.daatPtrs);
     // Exact-match AND requires that ALL scoreLists contain a
     // document id. Use the first (shortest) list to control the
     // search for matches.

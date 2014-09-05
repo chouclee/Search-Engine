@@ -17,10 +17,17 @@ public abstract class Qryop {
   //  DaaTPtrs are used by query operators for Document-at-a-Time (DAAT)
   //  query evaluation
 
-  protected class DaaTPtr {
+  protected class DaaTPtr implements Comparable<DaaTPtr>{
     protected ScoreList scoreList;	// A qry arg's score list (if any)
     protected InvList invList;		// A qry arg's inverted list (if any)
     protected int nextDoc;		// The next document to examine
+    public int compareTo(DaaTPtr a) {
+      if (this.scoreList.scores.size() > a.scoreList.scores.size())
+        return +1;
+      else if (this.scoreList.scores.size() < a.scoreList.scores.size())
+        return -1;
+      return 0;
+    }
   };
 
   //  Initially the query operator starts with no arguments and no
