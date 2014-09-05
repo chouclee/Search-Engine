@@ -11,13 +11,35 @@ public class ScoreList {
 
   //  A little utilty class to create a <docid, score> object.
 
-  protected class ScoreListEntry {
+  protected class ScoreListEntry implements Comparable<ScoreListEntry> {
     private int docid;
     private double score;
 
     private ScoreListEntry(int docid, double score) {
       this.docid = docid;
       this.score = score;
+    }
+    
+    // Implement Comparable Interface
+    // Sort the matching documents by their scores, in descending order. 
+    // The external document id should be a secondary sort key (i.e., for breaking ties). 
+    // Smaller ids should be ranked higher (i.e. ascending order).
+    public int compareTo(ScoreListEntry o) {
+      if (this.score > o.score) 
+        return -1;
+      else if (this.score < o.score)
+        return -1;
+      else { // if scores are same, use external document id to compare
+        String extDocIdThis = "";
+        String extDocIdO = "";
+        try {
+          extDocIdThis = QryEval.getExternalDocid(this.docid);
+          extDocIdO = QryEval.getExternalDocid(o.docid);
+        } catch (Exception e) {
+          //do nothing
+        }
+        return extDocIdThis.compareTo(extDocIdO);
+      }
     }
   }
 
@@ -50,5 +72,4 @@ public class ScoreList {
   public double getDocidScore(int n) {
     return this.scores.get(n).score;
   }
-
 }

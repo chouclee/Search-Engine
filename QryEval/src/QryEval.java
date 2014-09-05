@@ -81,9 +81,20 @@ public class QryEval {
       System.exit(1);
     }
 
-    DocLengthStore s = new DocLengthStore(READER);
+    //DocLengthStore s = new DocLengthStore(READER);
+    // set model
+    RetrievalModel model = null;
+    if (params.get("retrievalAlgorithm").equalsIgnoreCase("UnrankedBoolean")) {
+      model = new RetrievalModelUnrankedBoolean();
+    }
+    else if(params.get("retrievalAlgorithm").equalsIgnoreCase("RankedBoolean")) {
+      model = new RetrievalModelRankedBoolean();
+    }
+    else {
+      System.err.println(usage);
+      System.exit(1);
+    }
 
-    RetrievalModel model = new RetrievalModelUnrankedBoolean();
 
     // load all queries
     if (!params.containsKey("queryFilePath")) {
@@ -102,7 +113,7 @@ public class QryEval {
     } while (scan.hasNext());
     scan.close();
 
-    // evaluate unranked boolean retrieval algorithm
+    // evaluate retrieval algorithm
     for (Integer queryID : queriesID) {
       Qryop operation = parseQuery(queries.get(queryID));// retrieve first operation
       System.out.println(queryID + "\t" + queries.get(queryID));
@@ -358,6 +369,8 @@ public class QryEval {
 
     BufferedWriter writer = null;
     File file = new File(filePath);
+    // sort result
+    Collections.sort(result.docScores.scores);
     try {
       writer = new BufferedWriter(new FileWriter(file, true));
       int numDocs = Math.min(100, result.docScores.scores.size());

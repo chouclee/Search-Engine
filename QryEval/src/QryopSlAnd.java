@@ -44,7 +44,7 @@ public class QryopSlAnd extends QryopSl {
   public QryResult evaluate(RetrievalModel r) throws IOException {
 
     if (r instanceof RetrievalModelUnrankedBoolean)
-      return (evaluateBoolean(r));
+      return (evaluateBoolean(r, false));
 
     return null;
   }
@@ -58,7 +58,7 @@ public class QryopSlAnd extends QryopSl {
    * @return The result of evaluating the query.
    * @throws IOException
    */
-  public QryResult evaluateBoolean(RetrievalModel r) throws IOException {
+  public QryResult evaluateBoolean(RetrievalModel r, boolean isRanked) throws IOException {
 
     // Initialization
 
@@ -68,20 +68,8 @@ public class QryopSlAnd extends QryopSl {
     // Sort the arguments so that the shortest lists are first. This
     // improves the efficiency of exact-match AND without changing
     // the result.
-    // !!!!!Mark : improve it with merge-sort/quick-sort?
-/*
-    for (int i = 0; i < (this.daatPtrs.size() - 1); i++) {
-      for (int j = i + 1; j < this.daatPtrs.size(); j++) {
-        if (this.daatPtrs.get(i).scoreList.scores.size() > this.daatPtrs.get(j).scoreList.scores
-                .size()) {
-          ScoreList tmpScoreList = this.daatPtrs.get(i).scoreList;
-          this.daatPtrs.get(i).scoreList = this.daatPtrs.get(j).scoreList;
-          this.daatPtrs.get(j).scoreList = tmpScoreList;
-        }
-      }
-    }
-*/
     Collections.sort(this.daatPtrs);
+    
     // Exact-match AND requires that ALL scoreLists contain a
     // document id. Use the first (shortest) list to control the
     // search for matches.
@@ -96,6 +84,9 @@ public class QryopSlAnd extends QryopSl {
 
       int ptr0Docid = ptr0.scoreList.getDocid(ptr0.nextDoc);
       double docScore = 1.0;
+      
+      if (isRanked)
+        docScore = (double) ptr0.invList.getTf(ptr0.nextDoc);
 
       // Do the other query arguments have the ptr0Docid?
 
@@ -110,13 +101,15 @@ public class QryopSlAnd extends QryopSl {
             continue EVALUATEDOCUMENTS; // The ptr0docid can't match.
           else if (ptrj.scoreList.getDocid(ptrj.nextDoc) < ptr0Docid)
             ptrj.nextDoc++; // Not yet at the right doc.
-          else
+          else {// now at the right doc, update score
+            if (isRanked) {
+              docScore = Math.min(docScore, (double) ptrj.invList.getTf(ptrj.nextDoc));
+            }
             break; // ptrj matches ptr0Docid
+          }
         }
       }
-
       // The ptr0Docid matched all query arguments, so save it.
-
       result.docScores.add(ptr0Docid, docScore);
     }
 
