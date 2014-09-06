@@ -4,8 +4,8 @@ import java.util.*;
 public class QryopSlOr extends QryopSl {
 
   /**
-   * It is convenient for the constructor to accept a variable number of arguments. Thus new
-   * qryopOr (arg1, arg2, arg3, ...).
+   * It is convenient for the constructor to accept a variable number of arguments. Thus new qryopOr
+   * (arg1, arg2, arg3, ...).
    * 
    * @param q
    *          A query argument (a query operator).
@@ -64,26 +64,32 @@ public class QryopSlOr extends QryopSl {
 
     HashMap<Integer, Double> docidScoreMap = new HashMap<Integer, Double>();
 
-    double docScore = 1.0;
+    double docScore = 1.0, docScoreOld;
     DaaTPtr ptri;
     int ptriDocid;
 
     for (int i = 0; i < this.daatPtrs.size(); i++) {
       ptri = this.daatPtrs.get(i);
       for (int j = 0; j < ptri.scoreList.scores.size(); j++) {
+        docScore = 1.0;
         ptriDocid = ptri.scoreList.getDocid(j);
+        if (r instanceof RetrievalModelRankedBoolean)
+          docScore = (double) ptri.scoreList.getDocidScore(j);
 
-        if (!docidScoreMap.containsKey(ptriDocid)) {
+        if (!docidScoreMap.containsKey(ptriDocid))
           // if it's not in the hashMap, put it in the hashMap
           docidScoreMap.put(ptriDocid, docScore);
 
+        else if (r instanceof RetrievalModelRankedBoolean) {
+          docScoreOld = docidScoreMap.get(ptriDocid);
+          docidScoreMap.put(ptriDocid, Math.max(docScore, docScoreOld));
         }
       }
     }
     freeDaaTPtrs();
     ArrayList<Integer> sortedKeys = new ArrayList<Integer>(docidScoreMap.keySet());
     Collections.sort(sortedKeys);
-    for (int i = 0; i < sortedKeys.size(); i++) 
+    for (int i = 0; i < sortedKeys.size(); i++)
       result.docScores.add(sortedKeys.get(i), docidScoreMap.get(sortedKeys.get(i)));
     return result;
   }
