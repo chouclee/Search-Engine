@@ -44,7 +44,9 @@ public class QryopSlAnd extends QryopSl {
   public QryResult evaluate(RetrievalModel r) throws IOException {
 
     if (r instanceof RetrievalModelUnrankedBoolean)
-      return (evaluateBoolean(r, false));
+      return (evaluateBoolean(r));
+    else if (r instanceof RetrievalModelRankedBoolean)
+      return (evaluateBoolean(r));
 
     return null;
   }
@@ -58,7 +60,7 @@ public class QryopSlAnd extends QryopSl {
    * @return The result of evaluating the query.
    * @throws IOException
    */
-  public QryResult evaluateBoolean(RetrievalModel r, boolean isRanked) throws IOException {
+  public QryResult evaluateBoolean(RetrievalModel r) throws IOException {
 
     // Initialization
 
@@ -85,8 +87,8 @@ public class QryopSlAnd extends QryopSl {
       int ptr0Docid = ptr0.scoreList.getDocid(ptr0.nextDoc);
       double docScore = 1.0;
       
-      if (isRanked)
-        docScore = (double) ptr0.invList.getTf(ptr0.nextDoc);
+      if (r instanceof RetrievalModelRankedBoolean)
+        docScore = (double) ptr0.scoreList.getDocidScore(ptr0.nextDoc);
 
       // Do the other query arguments have the ptr0Docid?
 
@@ -102,8 +104,8 @@ public class QryopSlAnd extends QryopSl {
           else if (ptrj.scoreList.getDocid(ptrj.nextDoc) < ptr0Docid)
             ptrj.nextDoc++; // Not yet at the right doc.
           else {// now at the right doc, update score
-            if (isRanked) {
-              docScore = Math.min(docScore, (double) ptrj.invList.getTf(ptrj.nextDoc));
+            if (r instanceof RetrievalModelRankedBoolean) {
+              docScore = Math.min(docScore, (double) ptrj.scoreList.getDocidScore(ptrj.nextDoc));
             }
             break; // ptrj matches ptr0Docid
           }
@@ -132,6 +134,8 @@ public class QryopSlAnd extends QryopSl {
 
     if (r instanceof RetrievalModelUnrankedBoolean)
       return (0.0);
+    if (r instanceof RetrievalModelRankedBoolean)
+      return 1.0;
 
     return 0.0;
   }

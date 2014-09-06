@@ -39,7 +39,8 @@ public class QryopSlOr extends QryopSl {
 
     if (r instanceof RetrievalModelUnrankedBoolean)
       return (evaluateBoolean(r));
-
+    else if (r instanceof RetrievalModelRankedBoolean)
+      return (evaluateBoolean(r));
     return null;
   }
 
@@ -101,6 +102,8 @@ public class QryopSlOr extends QryopSl {
 
     if (r instanceof RetrievalModelUnrankedBoolean)
       return (0.0);
+    if (r instanceof RetrievalModelRankedBoolean)
+      return 1.0;
 
     return 0.0;
   }

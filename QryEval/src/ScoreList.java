@@ -28,7 +28,7 @@ public class ScoreList {
       if (this.score > o.score) 
         return -1;
       else if (this.score < o.score)
-        return -1;
+        return 1;
       else { // if scores are same, use external document id to compare
         String extDocIdThis = "";
         String extDocIdO = "";

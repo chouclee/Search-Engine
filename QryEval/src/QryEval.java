@@ -81,20 +81,17 @@ public class QryEval {
       System.exit(1);
     }
 
-    //DocLengthStore s = new DocLengthStore(READER);
+    // DocLengthStore s = new DocLengthStore(READER);
     // set model
     RetrievalModel model = null;
     if (params.get("retrievalAlgorithm").equalsIgnoreCase("UnrankedBoolean")) {
       model = new RetrievalModelUnrankedBoolean();
-    }
-    else if(params.get("retrievalAlgorithm").equalsIgnoreCase("RankedBoolean")) {
+    } else if (params.get("retrievalAlgorithm").equalsIgnoreCase("RankedBoolean")) {
       model = new RetrievalModelRankedBoolean();
-    }
-    else {
+    } else {
       System.err.println(usage);
       System.exit(1);
     }
-
 
     // load all queries
     if (!params.containsKey("queryFilePath")) {
@@ -145,33 +142,6 @@ public class QryEval {
      * 
      * Modify the software so that you read a query from a file, parse it, and form the query tree
      * automatically.
-     */
-    /*
-     * // A one-word query. printResults("pea", (new QryopSlScore(new
-     * QryopIlTerm(tokenizeQuery("pea")[0]))).evaluate(model));
-     * 
-     * // A more complex query.
-     * printResults("#AND (aparagus broccoli cauliflower #SYN(peapods peas))", (new QryopSlAnd(new
-     * QryopIlTerm(tokenizeQuery("asparagus")[0]), new QryopIlTerm( tokenizeQuery("broccoli")[0]),
-     * new QryopIlTerm(tokenizeQuery("cauliflower")[0]), new QryopIlSyn( new
-     * QryopIlTerm(tokenizeQuery("peapods")[0]), new QryopIlTerm(
-     * tokenizeQuery("peas")[0])))).evaluate(model));
-     * 
-     * // A different way to create the previous query. This doesn't use // a stack, but it may make
-     * it easier to see how you would parse a // query with a stack-based architecture. Qryop op1 =
-     * new QryopSlAnd(); op1.add(new QryopIlTerm(tokenizeQuery("asparagus")[0])); op1.add(new
-     * QryopIlTerm(tokenizeQuery("broccoli")[0])); op1.add(new
-     * QryopIlTerm(tokenizeQuery("cauliflower")[0])); Qryop op2 = new QryopIlSyn(); op2.add(new
-     * QryopIlTerm(tokenizeQuery("peapods")[0])); op2.add(new
-     * QryopIlTerm(tokenizeQuery("peas")[0])); op1.add(op2);
-     * printResults("#AND (aparagus broccoli cauliflower #SYN(peapods peas))", op1.evaluate(model));
-     * 
-     * // Using the example query parser. Notice that this does no // lexical processing of query
-     * terms. Add that to the query // parser. Qryop qTree; String query = new
-     * String("#AND(apple pie)"); qTree = parseQuery(query); printResults(query,
-     * qTree.evaluate(model)); /* Create the trec_eval output. Your code should write to the file
-     * specified in the parameter file, and it should write the results that you retrieved above.
-     * This code just allows the testing infrastructure to work on QryEval.
      */
 
     // Later HW assignments will use more RAM, so you want to be aware
@@ -369,16 +339,17 @@ public class QryEval {
 
     BufferedWriter writer = null;
     File file = new File(filePath);
-    // sort result
-    Collections.sort(result.docScores.scores);
     try {
       writer = new BufferedWriter(new FileWriter(file, true));
       int numDocs = Math.min(100, result.docScores.scores.size());
-      for (int i = 0; i < numDocs; i++) {
-        writer.write(queryID + "\t" + "Q0" + "\t");
-        if (result.docScores.scores.size() == 0)
-          writer.write("dummy" + "\t" + "1" + "\t" + "0" + "\t" + "run-1\n");
-        else {
+      if (result.docScores.scores.size() == 0)
+        writer.write(queryID + "\t" + "Q0" + "\t" + "dummy" + "\t" + "1" + "\t" + "0" + "\t"
+                + "run-1\n");
+      else {
+        // sort result
+        Collections.sort(result.docScores.scores);
+        for (int i = 0; i < numDocs; i++) {
+          writer.write(queryID + "\t" + "Q0" + "\t");
           writer.write(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i + 1) + "\t"
                   + result.docScores.getDocidScore(i) + "\t" + "run-1\n");
         }
