@@ -241,15 +241,18 @@ public class QryEval {
 
       if (token.matches("[ ,(\t\n\r]")) {
         // Ignore most delimiters.
-      } else if (token.equalsIgnoreCase("#and")) {
+      } else if (token.equalsIgnoreCase("#and")) { // AND
         currentOp = new QryopSlAnd();
         stack.push(currentOp);
-      } else if (token.equalsIgnoreCase("#syn")) {
+      } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
-      } else if (token.equalsIgnoreCase("#or")) {
+      } else if (token.equalsIgnoreCase("#or")) {  // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
+      } else if (token.matches("(?i)#near/\\d+")) {// NEAR
+        int dist = Integer.parseInt(token.split("/")[1]);
+        currentOp = new QryopIlNear(dist);    
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -347,7 +350,7 @@ public class QryEval {
         writer.write(queryID + "\t" + "Q0" + "\t" + "dummy" + "\t" + "1" + "\t" + "0" + "\t"
                 + "run-1\n");
       else { 
-        Long startTime = System.currentTimeMillis();
+        //Long startTime = System.currentTimeMillis();
         // get best 100 match
         // put 100 matches in a PriorityQueue, traverse the rest matches, if any
         // match is bigger than the smallest one in the PQ, remove the head of PQ
@@ -369,8 +372,8 @@ public class QryEval {
         for (int i = numDocs; i > 0; i--) {
           topRank[i - 1] = pq.poll();
         }        
-        Long endTime = System.currentTimeMillis();
-        System.out.println("sort result : " + (endTime - startTime)/1000 + "s"); 
+        //Long endTime = System.currentTimeMillis();
+        //System.out.println("sort result : " + (endTime - startTime)/1000 + "s"); 
         for (int i = 0; i < numDocs; i++) {
           writer.write(queryID + "\t" + "Q0" + "\t");
           writer.write(getExternalDocid(topRank[i].getDocid()) + "\t" + (i + 1) + "\t"
