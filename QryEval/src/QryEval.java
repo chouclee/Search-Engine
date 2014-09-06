@@ -360,20 +360,21 @@ public class QryEval {
           pq.add(result.docScores.scores.get(cnt));
         }
         for (; cnt < result.docScores.scores.size(); cnt++) {
-          if (result.docScores.scores.get(cnt).compareTo(pq.peek()) > 0)
+          if (result.docScores.scores.get(cnt).compareTo(pq.peek()) > 0){
             pq.poll();
             pq.add(result.docScores.scores.get(cnt));
+          }
         }
         ScoreList.ScoreListEntry[] topRank = new ScoreList.ScoreListEntry[numDocs];
         for (int i = numDocs; i > 0; i--) {
-          topRank[i -1] = pq.poll();
+          topRank[i - 1] = pq.poll();
         }        
         Long endTime = System.currentTimeMillis();
         System.out.println("sort result : " + (endTime - startTime)/1000 + "s"); 
         for (int i = 0; i < numDocs; i++) {
           writer.write(queryID + "\t" + "Q0" + "\t");
-          writer.write(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i + 1) + "\t"
-                  + result.docScores.getDocidScore(i) + "\t" + "run-1\n");
+          writer.write(getExternalDocid(topRank[i].getDocid()) + "\t" + (i + 1) + "\t"
+                  + topRank[i].getScore() + "\t" + "run-1\n");
         }
       }
     } catch (Exception e) {

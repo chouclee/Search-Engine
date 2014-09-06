@@ -21,6 +21,14 @@ public class ScoreList {
       this.score = score;
     }
     
+    public int getDocid() {
+      return this.docid;
+    }
+    
+    public double getScore() {
+      return this.score;
+    }
+    
     // Implement Comparable Interface
     // Sort the matching documents by their scores, in descending order.
     // The external document id should be a secondary sort key (i.e., for breaking ties).
@@ -39,7 +47,7 @@ public class ScoreList {
         } catch (Exception e) {
           // do nothing
         }
-        return extDocIdThis.compareTo(extDocIdO);
+        return -1*extDocIdThis.compareTo(extDocIdO);
       }
     }
   }
