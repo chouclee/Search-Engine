@@ -21,6 +21,7 @@ import org.apache.lucene.search.*;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
+
 public class QryEval {
 
   static String usage = "Usage:  java " + System.getProperty("sun.java.command") + " paramFile\n\n";
@@ -336,7 +337,7 @@ public class QryEval {
   }
 
   static void writeTrecEvalFile(String filePath, int queryID, QryResult result) {
-
+   
     BufferedWriter writer = null;
     File file = new File(filePath);
     try {
@@ -345,9 +346,30 @@ public class QryEval {
       if (result.docScores.scores.size() == 0)
         writer.write(queryID + "\t" + "Q0" + "\t" + "dummy" + "\t" + "1" + "\t" + "0" + "\t"
                 + "run-1\n");
-      else {
-        // sort result
-        Collections.sort(result.docScores.scores);
+      else { 
+        Long startTime = System.currentTimeMillis();
+        // get best 100 match
+        // put 100 matches in a PriorityQueue, traverse the rest matches, if any
+        // match is bigger than the smallest one in the PQ, remove the head of PQ
+        // add this bigger one
+        Comparator<ScoreList.ScoreListEntry> SCORE_ORDER = new ScoreList.ScoreOrder();
+        PriorityQueue<ScoreList.ScoreListEntry> pq = 
+                new PriorityQueue<ScoreList.ScoreListEntry>(numDocs, SCORE_ORDER);
+        int cnt = 0;
+        for (; cnt < numDocs; cnt++) {
+          pq.add(result.docScores.scores.get(cnt));
+        }
+        for (; cnt < result.docScores.scores.size(); cnt++) {
+          if (result.docScores.scores.get(cnt).compareTo(pq.peek()) > 0)
+            pq.poll();
+            pq.add(result.docScores.scores.get(cnt));
+        }
+        ScoreList.ScoreListEntry[] topRank = new ScoreList.ScoreListEntry[numDocs];
+        for (int i = numDocs; i > 0; i--) {
+          topRank[i -1] = pq.poll();
+        }        
+        Long endTime = System.currentTimeMillis();
+        System.out.println("sort result : " + (endTime - startTime)/1000 + "s"); 
         for (int i = 0; i < numDocs; i++) {
           writer.write(queryID + "\t" + "Q0" + "\t");
           writer.write(getExternalDocid(result.docScores.getDocid(i)) + "\t" + (i + 1) + "\t"
