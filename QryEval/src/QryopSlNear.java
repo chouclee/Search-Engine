@@ -1,7 +1,13 @@
-import java.io.IOException;
-import java.util.*;
+/**
+ *  This class is used as a QryopSl wrapper for QryopIlNear 
+ *  
+ *  Copyright (c) 2014, Carnegie Mellon University.  All Rights Reserved.
+ */
 
-public class QryopSlOr extends QryopSl {
+import java.io.IOException;
+
+public class QryopSlNear extends QryopSl {
+  private int distance;
 
   /**
    * It is convenient for the constructor to accept a variable number of arguments. Thus new qryopOr
@@ -10,7 +16,8 @@ public class QryopSlOr extends QryopSl {
    * @param q
    *          A query argument (a query operator).
    */
-  public QryopSlOr(Qryop... q) {
+  public QryopSlNear(int distance, Qryop... q) {
+    this.distance = distance;
     for (int i = 0; i < q.length; i++)
       this.args.add(q[i]);
   }
@@ -60,37 +67,13 @@ public class QryopSlOr extends QryopSl {
     allocDaaTPtrs(r);
     QryResult result = new QryResult();
 
-    // use hashMap to check whether a DocID has appeared or not.
-
-    HashMap<Integer, Double> docidScoreMap = new HashMap<Integer, Double>();
-
-    double docScore = 1.0, docScoreOld;
-    DaaTPtr ptri;
-    int ptriDocid;
-
-    for (int i = 0; i < this.daatPtrs.size(); i++) {
-      ptri = this.daatPtrs.get(i);
-      for (int j = 0; j < ptri.scoreList.scores.size(); j++) {
-        docScore = 1.0;
-        ptriDocid = ptri.scoreList.getDocid(j);
-        if (r instanceof RetrievalModelRankedBoolean)
-          docScore = (double) ptri.scoreList.getDocidScore(j);
-
-        if (!docidScoreMap.containsKey(ptriDocid))
-          // if it's not in the hashMap, put it in the hashMap
-          docidScoreMap.put(ptriDocid, docScore);
-
-        else if (r instanceof RetrievalModelRankedBoolean) {
-          docScoreOld = docidScoreMap.get(ptriDocid);
-          docidScoreMap.put(ptriDocid, Math.max(docScore, docScoreOld));
-        }
-      }
+    DaaTPtr ptr0 = this.daatPtrs.get(0);
+    int ptr0Docid;
+    for (int i = 0; i < ptr0.scoreList.scores.size(); i++) {
+      ptr0Docid = ptr0.scoreList.getDocid(i);
+      result.docScores.add(ptr0Docid, ptr0.scoreList.scores.get(i).getScore());
     }
-    freeDaaTPtrs();
-    ArrayList<Integer> sortedKeys = new ArrayList<Integer>(docidScoreMap.keySet());
-    Collections.sort(sortedKeys);
-    for (int i = 0; i < sortedKeys.size(); i++)
-      result.docScores.add(sortedKeys.get(i), docidScoreMap.get(sortedKeys.get(i)));
+
     return result;
   }
 
@@ -126,6 +109,6 @@ public class QryopSlOr extends QryopSl {
     for (int i = 0; i < this.args.size(); i++)
       result += this.args.get(i).toString() + " ";
 
-    return ("#OR( " + result + ")");
+    return ("#NEAR/" + this.distance + "( " + result + ")");
   }
 }

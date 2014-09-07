@@ -78,6 +78,8 @@ public class QryopSlScore extends QryopSl {
     // Each pass of the loop computes a score for one document. Note:
     // If the evaluate operation above returned a score list (which is
     // very possible), this loop gets skipped.
+    if (result == null)
+      return null;
 
     for (int i = 0; i < result.invertedList.df; i++) {
 

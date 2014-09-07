@@ -252,7 +252,9 @@ public class QryEval {
         stack.push(currentOp);
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         int dist = Integer.parseInt(token.split("/")[1]);
-        currentOp = new QryopIlNear(dist);    
+        stack.push(new QryopSlNear(dist));
+        currentOp = new QryopIlNear(dist);
+        stack.push(currentOp);
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
