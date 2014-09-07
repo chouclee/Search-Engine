@@ -36,6 +36,7 @@ public abstract class QryopSl extends Qryop {
       ptri.invList = null;
       ptri.scoreList = this.args.get(i).evaluate(r).docScores;
       ptri.nextDoc = 0;
+      ptri.size = ptri.scoreList.scores.size();
 
       this.daatPtrs.add(ptri);
     }

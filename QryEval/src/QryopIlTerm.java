@@ -54,6 +54,8 @@ public class QryopIlTerm extends QryopIl {
    */
   public QryResult evaluate(RetrievalModel r) throws IOException {
     QryResult result = new QryResult();
+    //InvList test = new InvList(this.term, this.field);
+    //result.invertedList = test;
     result.invertedList = new InvList(this.term, this.field);
     return result;
   }

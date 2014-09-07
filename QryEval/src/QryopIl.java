@@ -27,6 +27,7 @@ public abstract class QryopIl extends Qryop {
       ptri.invList = this.args.get(i).evaluate(r).invertedList;
       ptri.scoreList = null;
       ptri.nextDoc = 0;
+      ptri.size = ptri.invList.df;
 	
       this.daatPtrs.add (ptri);
     }

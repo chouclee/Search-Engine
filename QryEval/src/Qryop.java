@@ -21,12 +21,13 @@ public abstract class Qryop {
     protected ScoreList scoreList;	// A qry arg's score list (if any)
     protected InvList invList;		// A qry arg's inverted list (if any)
     protected int nextDoc;		// The next document to examine
+    protected int size;     // A qry arg's list size (score list or inverted list)
     @Override
     public int compareTo(DaaTPtr o) {
       // TODO Auto-generated method stub
-      if (this.scoreList.scores.size() > o.scoreList.scores.size())
+      if (this.size > o.size)
         return +1;
-      else if (this.scoreList.scores.size() < o.scoreList.scores.size())
+      else if (this.size < o.size)
         return -1;
       return 0;
     }
