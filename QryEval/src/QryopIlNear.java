@@ -62,16 +62,18 @@ public class QryopIlNear extends QryopIl {
     EVALUATEDOCUMENTS: for (; ptr0.nextDoc < ptr0.invList.df; ptr0.nextDoc++) {
 
       int ptr0Docid = ptr0.invList.getDocid(ptr0.nextDoc);
-      InvList.DocPosting pst0 = ptr0.invList.postings.get(ptr0.nextDoc);
-      // Do the other query arguments have the ptr0Docid?
       
+      // pointer to the current doc's invlist's posting
+      InvList.DocPosting pst0 = ptr0.invList.postings.get(ptr0.nextDoc);
+      
+      // Do the other query arguments have the ptr0Docid?    
       // use arraylist to store all match positions in previous comparison
       // e.g. if term "cheap" and term "internet" has in doc ptr0Docid has 
       // matching positions(i.e. "cheap" pos{1,4,6,9}, "internet" pos{2,7,11}. distance:1,
       // then we store {2,7} in this arraylist, for next term)
       ArrayList<Integer> prevMatchPostions = new ArrayList<Integer>(pst0.positions);
       int prevPos, nextPos;
-      for (int j = 1; j < this.daatPtrs.size(); j++) {
+      EVALUATETERM: for (int j = 1; j < this.daatPtrs.size(); j++) {
 
         DaaTPtr ptrj = this.daatPtrs.get(j);
         
@@ -94,7 +96,7 @@ public class QryopIlNear extends QryopIl {
               prevPos = prevMatchPostions.get(m);
               nextPos = pstj.positions.get(n);
               if ( nextPos < prevPos)
-                n++;// it is impossible that n and m are equal since they are in the same doc
+                n++;// it is impossible that nextPos and prevPos are equal since they are in the same doc
               else if ((nextPos - prevPos) <= this.distance) {
                 // match, store new match position in prevMatchPositions
                 tempPos.add(nextPos);
@@ -107,15 +109,16 @@ public class QryopIlNear extends QryopIl {
             if (tempPos.size() == 0) // there is no need to check rest terms with docid ptr0docid
               continue EVALUATEDOCUMENTS;
             prevMatchPostions = tempPos;
-            break; // ready for next term evaluation
+            continue EVALUATETERM; // ready for next term evaluation
           }
         }
         
         // **********************Attention********************************
         // update result, use last term's position as seach result's position 
         // might need modify this in future
-        result.invertedList.appendPosting(ptr0Docid, prevMatchPostions);
+        
       }
+      result.invertedList.appendPosting(ptr0Docid, prevMatchPostions);
     }
 
     freeDaaTPtrs();
