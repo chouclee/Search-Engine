@@ -116,7 +116,7 @@ public class QryopSlScore extends QryopSl {
     if (r instanceof RetrievalModelUnrankedBoolean)
       return (0.0);
     if (r instanceof RetrievalModelRankedBoolean)
-      return (1.0);
+      return (0.0);
 
     return 0.0;
   }

@@ -21,7 +21,6 @@ import org.apache.lucene.search.*;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
-
 public class QryEval {
 
   static String usage = "Usage:  java " + System.getProperty("sun.java.command") + " paramFile\n\n";
@@ -247,14 +246,17 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
-      } else if (token.equalsIgnoreCase("#or")) {  // OR
+      } else if (token.equalsIgnoreCase("#or")) { // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         int dist = Integer.parseInt(token.split("/")[1]);
-        stack.push(new QryopSlNear(dist));
+        stack.push(new QryopSlScore()); // wrap Near operator with SlScore
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
+        // stack.push(new QryopSlNear(dist));
+        // currentOp = new QryopIlNear(dist);
+        // stack.push(currentOp);
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -342,7 +344,7 @@ public class QryEval {
   }
 
   static void writeTrecEvalFile(String filePath, int queryID, QryResult result) {
-   
+
     BufferedWriter writer = null;
     File file = new File(filePath);
     try {
@@ -351,21 +353,21 @@ public class QryEval {
       if (result.docScores.scores.size() == 0)
         writer.write(queryID + "\t" + "Q0" + "\t" + "dummy" + "\t" + "1" + "\t" + "0" + "\t"
                 + "run-1\n");
-      else { 
-        //Long startTime = System.currentTimeMillis();
+      else {
+        // Long startTime = System.currentTimeMillis();
         // get best 100 match
         // put 100 matches in a PriorityQueue, traverse the rest matches, if any
         // match is bigger than the smallest one in the PQ, remove the head of PQ
         // add this bigger one
         Comparator<ScoreList.ScoreListEntry> SCORE_ORDER = new ScoreList.ScoreOrder();
-        PriorityQueue<ScoreList.ScoreListEntry> pq = 
-                new PriorityQueue<ScoreList.ScoreListEntry>(numDocs, SCORE_ORDER);
+        PriorityQueue<ScoreList.ScoreListEntry> pq = new PriorityQueue<ScoreList.ScoreListEntry>(
+                numDocs, SCORE_ORDER);
         int cnt = 0;
         for (; cnt < numDocs; cnt++) {
           pq.add(result.docScores.scores.get(cnt));
         }
         for (; cnt < result.docScores.scores.size(); cnt++) {
-          if (result.docScores.scores.get(cnt).compareTo(pq.peek()) > 0){
+          if (result.docScores.scores.get(cnt).compareTo(pq.peek()) > 0) {
             pq.poll();
             pq.add(result.docScores.scores.get(cnt));
           }
@@ -373,9 +375,9 @@ public class QryEval {
         ScoreList.ScoreListEntry[] topRank = new ScoreList.ScoreListEntry[numDocs];
         for (int i = numDocs; i > 0; i--) {
           topRank[i - 1] = pq.poll();
-        }        
-        //Long endTime = System.currentTimeMillis();
-        //System.out.println("sort result : " + (endTime - startTime)/1000 + "s"); 
+        }
+        // Long endTime = System.currentTimeMillis();
+        // System.out.println("sort result : " + (endTime - startTime)/1000 + "s");
         for (int i = 0; i < numDocs; i++) {
           writer.write(queryID + "\t" + "Q0" + "\t");
           writer.write(getExternalDocid(topRank[i].getDocid()) + "\t" + (i + 1) + "\t"
