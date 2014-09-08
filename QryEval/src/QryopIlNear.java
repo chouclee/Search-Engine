@@ -111,13 +111,10 @@ public class QryopIlNear extends QryopIl {
             prevMatchPostions = tempPos;
             continue EVALUATETERM; // ready for next term evaluation
           }
-        }
-        
-        // **********************Attention********************************
-        // update result, use last term's position as seach result's position 
-        // might need modify this in future
-        
-      }
+        }        
+      }    
+      // **********************Attention********************************
+      // update result, use last term's position as search result's position 
       result.invertedList.appendPosting(ptr0Docid, prevMatchPostions);
     }
 
