@@ -233,7 +233,7 @@ public class QryEval {
     // Each pass of the loop processes one token. To improve
     // efficiency and clarity, the query operator on the top of the
     // stack is also stored in currentOp.
-
+    boolean noIlOperator = true;
     while (tokens.hasMoreTokens()) {
 
       token = tokens.nextToken();
@@ -251,7 +251,10 @@ public class QryEval {
         stack.push(currentOp);
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         int dist = Integer.parseInt(token.split("/")[1]);
-        stack.push(new QryopSlScore()); // wrap Near operator with SlScore
+        if (noIlOperator) {
+          stack.push(new QryopSlScore()); // wrap Near operator with SlScore
+          noIlOperator = false;
+        }
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
         // stack.push(new QryopSlNear(dist));
@@ -281,13 +284,16 @@ public class QryEval {
         // System.out.println(tokenized.length);
         if (tokenized != null && tokenized.length != 0) {
           token = tokenized[0];
-          if (token.matches("(?i)\\w+(\\.)(body|url|keywords|title|inlink)")) {
+          if (token.matches("(?i).+(\\.)(body|url|keyword|title|inlink)")) {
             String[] splited = token.split("\\.");
             token = splited[0];
             field = splited[1];
             currentOp.add(new QryopIlTerm(token, field));
-          } else
-            currentOp.add(new QryopIlTerm(token));
+          } else if (tokenized.length > 1 && 
+                  tokenized[1].matches("(body|url|keywords|title|inlink)")) {
+            currentOp.add(new QryopIlTerm(token, tokenized[1]));
+          }
+          else currentOp.add(new QryopIlTerm(token));
           
         }
       }
