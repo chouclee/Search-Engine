@@ -228,7 +228,7 @@ public class QryEval {
     // Tokenize the query.
 
     StringTokenizer tokens = new StringTokenizer(qString, "\t\n\r ,()", true);
-    String token = null;
+    String token = null, field = null;
 
     // Each pass of the loop processes one token. To improve
     // efficiency and clarity, the query operator on the top of the
@@ -281,7 +281,14 @@ public class QryEval {
         // System.out.println(tokenized.length);
         if (tokenized != null && tokenized.length != 0) {
           token = tokenized[0];
-          currentOp.add(new QryopIlTerm(token));
+          if (token.matches("(?i)\\w+(\\.)(body|url|keywords|title|inlink)")) {
+            String[] splited = token.split("\\.");
+            token = splited[0];
+            field = splited[1];
+            currentOp.add(new QryopIlTerm(token, field));
+          } else
+            currentOp.add(new QryopIlTerm(token));
+          
         }
       }
     }

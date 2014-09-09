@@ -24,7 +24,7 @@ public abstract class Qryop {
     protected int size;     // A qry arg's list size (score list or inverted list)
     @Override
     public int compareTo(DaaTPtr o) {
-      // TODO Auto-generated method stub
+      // TODO implement Comparable interface
       if (this.size > o.size)
         return +1;
       else if (this.size < o.size)
