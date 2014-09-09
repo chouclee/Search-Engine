@@ -1,4 +1,4 @@
 indexPath=/home/happyuser/Downloads/index
-retrievalAlgorithm=UnrankedBoolean
+retrievalAlgorithm=RankedBoolean
 queryFilePath=queries.txt
 trecEvalOutputPath=HW1-queries-UB.teIn
