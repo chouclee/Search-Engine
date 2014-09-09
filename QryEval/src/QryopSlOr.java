@@ -73,6 +73,9 @@ public class QryopSlOr extends QryopSl {
       for (int j = 0; j < ptri.scoreList.scores.size(); j++) {
         docScore = 1.0;
         ptriDocid = ptri.scoreList.getDocid(j);
+        //System.out.print("j's docID: "+ptriDocid + ":");
+        //System.out.println(ptri.scoreList.getDocidScore(j));
+        
         if (r instanceof RetrievalModelRankedBoolean)
           docScore = (double) ptri.scoreList.getDocidScore(j);
 

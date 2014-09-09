@@ -88,6 +88,7 @@ public class QryopSlScore extends QryopSl {
       if (r instanceof RetrievalModelUnrankedBoolean)
         result.docScores.add(result.invertedList.postings.get(i).docid, (float) 1.0);
       else if (r instanceof RetrievalModelRankedBoolean)
+        // for RankedBoolean, use term frequency as score
         result.docScores.add(result.invertedList.postings.get(i).docid, 
                 result.invertedList.getTf(i));
     }

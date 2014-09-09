@@ -49,9 +49,7 @@ public class QryopIlNear extends QryopIl {
 
     QryResult result = new QryResult();
     
-    // Sort the arguments so that the shortest lists are first. This
-    // improves the efficiency
-    Collections.sort(this.daatPtrs);
+    //Collections.sort(this.daatPtrs);
     
     // not sure about this line. Should all terms come from same field?
     result.invertedList.field = new String(this.daatPtrs.get(0).invList.field);
@@ -65,6 +63,8 @@ public class QryopIlNear extends QryopIl {
       
       // pointer to the current doc's invlist's posting
       InvList.DocPosting pst0 = ptr0.invList.postings.get(ptr0.nextDoc);
+      //System.out.println("i's docID: " + ptr0Docid);
+      //System.out.println("i's positions: " +pst0.positions);
       
       // Do the other query arguments have the ptr0Docid?    
       // use arraylist to store all match positions in previous comparison
@@ -87,6 +87,8 @@ public class QryopIlNear extends QryopIl {
             ptrj.nextDoc++; // Not yet at the right doc.
           else {// now at the same doc, test the distance
             pstj = ptrj.invList.postings.get(ptrj.nextDoc);
+            //System.out.println("j's docID: "+ptrj.invList.getDocid(ptrj.nextDoc));
+            //System.out.println("j's postions:" + pstj.positions);
             int m = 0, n = 0; 
             // m : index in prevMatchPositions   
             // n : index in pstj.postions 
