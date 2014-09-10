@@ -233,7 +233,7 @@ public class QryEval {
     // Each pass of the loop processes one token. To improve
     // efficiency and clarity, the query operator on the top of the
     // stack is also stored in currentOp.
-    boolean noIlOperator = true;
+    boolean isFirstOp = true;
     while (tokens.hasMoreTokens()) {
 
       token = tokens.nextToken();
@@ -243,18 +243,25 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#and")) { // AND
         currentOp = new QryopSlAnd();
         stack.push(currentOp);
+        isFirstOp = false;
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
+        isFirstOp = false;
       } else if (token.equalsIgnoreCase("#or")) { // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
+        isFirstOp = false;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
-        int dist = Integer.parseInt(token.split("/")[1]);
-        if (noIlOperator) {
-          stack.push(new QryopSlScore()); // wrap Near operator with SlScore
-          noIlOperator = false;
+        if (isFirstOp) {
+          stack.push(new QryopSlScore());
+          isFirstOp = false;
         }
+        int dist = Integer.parseInt(token.split("/")[1]);
+        //if (noIlOperator) {
+        //  stack.push(new QryopSlScore()); // wrap Near operator with SlScore
+        //  noIlOperator = false;
+        //}
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
         // stack.push(new QryopSlNear(dist));
@@ -267,7 +274,8 @@ public class QryEval {
         // below). Otherwise, add the current operator as an
         // argument to the higher-level operator, and shift
         // processing back to the higher-level operator.
-
+        //if (!noIlOperator)
+        //  noIlOperator = true;
         stack.pop();
 
         if (stack.empty())
@@ -284,13 +292,13 @@ public class QryEval {
         // System.out.println(tokenized.length);
         if (tokenized != null && tokenized.length != 0) {
           token = tokenized[0];
-          if (token.matches("(?i).+(\\.)(body|url|keyword|title|inlink)")) {
+          if (token.matches("(?i).+(\\.)(body|url|keywords|title|inlink)")) {
             String[] splited = token.split("\\.");
             token = splited[0];
             field = splited[1];
             currentOp.add(new QryopIlTerm(token, field));
           } else if (tokenized.length > 1 && 
-                  tokenized[1].matches("(body|url|keywords|title|inlink)")) {
+                  tokenized[1].matches("(body|url|keyword|title|inlink)")) {
             currentOp.add(new QryopIlTerm(token, tokenized[1]));
           }
           else currentOp.add(new QryopIlTerm(token));
@@ -362,6 +370,7 @@ public class QryEval {
     File file = new File(filePath);
     try {
       writer = new BufferedWriter(new FileWriter(file, true));
+      //writer = new BufferedWriter(new FileWriter(file, false));
       int numDocs = Math.min(100, result.docScores.scores.size());
       if (result.docScores.scores.size() == 0)
         writer.write(queryID + "\t" + "Q0" + "\t" + "dummy" + "\t" + "1" + "\t" + "0" + "\t"
