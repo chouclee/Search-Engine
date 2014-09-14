@@ -41,6 +41,7 @@ public class QryEval {
     analyzer.setLowercase(true);
     analyzer.setStopwordRemoval(true);
     analyzer.setStemmer(EnglishAnalyzerConfigurable.StemmerType.KSTEM);
+    //analyzer.setStemmer(EnglishAnalyzerConfigurable.StemmerType.PORTER);
   }
 
   /**
@@ -99,6 +100,7 @@ public class QryEval {
       System.exit(1);
     }
     ArrayList<Integer> queriesID = new ArrayList<Integer>();
+    // use a hashmap to relate query IDs and queries
     HashMap<Integer, String> queries = new HashMap<Integer, String>();
     scan = new Scanner(new File(params.get("queryFilePath")));
     line = null;
@@ -233,7 +235,7 @@ public class QryEval {
     // Each pass of the loop processes one token. To improve
     // efficiency and clarity, the query operator on the top of the
     // stack is also stored in currentOp.
-    boolean isFirstOp = true;
+    boolean isFirstOp = true; // used to check whether this op is the left most op
     while (tokens.hasMoreTokens()) {
 
       token = tokens.nextToken();
@@ -253,20 +255,15 @@ public class QryEval {
         stack.push(currentOp);
         isFirstOp = false;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
+        // if the query's highest level is near
+        // we should warp this query with QryopSlScore
         if (isFirstOp) {
           stack.push(new QryopSlScore());
           isFirstOp = false;
         }
         int dist = Integer.parseInt(token.split("/")[1]);
-        //if (noIlOperator) {
-        //  stack.push(new QryopSlScore()); // wrap Near operator with SlScore
-        //  noIlOperator = false;
-        //}
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
-        // stack.push(new QryopSlNear(dist));
-        // currentOp = new QryopIlNear(dist);
-        // stack.push(currentOp);
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -274,8 +271,8 @@ public class QryEval {
         // below). Otherwise, add the current operator as an
         // argument to the higher-level operator, and shift
         // processing back to the higher-level operator.
-        //if (!noIlOperator)
-        //  noIlOperator = true;
+        // if (!noIlOperator)
+        // noIlOperator = true;
         stack.pop();
 
         if (stack.empty())
@@ -297,12 +294,16 @@ public class QryEval {
             token = splited[0];
             field = splited[1];
             currentOp.add(new QryopIlTerm(token, field));
-          } else if (tokenized.length > 1 && 
-                  tokenized[1].matches("(body|url|keyword|title|inlink)")) {
+          } else if (tokenized.length > 1
+                  && tokenized[1].matches("(body|url|keyword|title|inlink)")) {
+            // Edge case :
+            // if the term is a number dot field (like 2.keywords), after being tokenized, 
+            // number and field would be separated into two columns, and "keywords" would 
+            // be truncated to "keyword"
             currentOp.add(new QryopIlTerm(token, tokenized[1]));
-          }
-          else currentOp.add(new QryopIlTerm(token));
-          
+          } else
+            currentOp.add(new QryopIlTerm(token));
+
         }
       }
     }
@@ -371,6 +372,8 @@ public class QryEval {
     try {
       writer = new BufferedWriter(new FileWriter(file, true));
       //writer = new BufferedWriter(new FileWriter(file, false));
+      // use false and true to control append function. false is used for debugging
+      // false : overwrite the file; true : append mode, no overwrite
       int numDocs = Math.min(100, result.docScores.scores.size());
       if (result.docScores.scores.size() == 0)
         writer.write(queryID + "\t" + "Q0" + "\t" + "dummy" + "\t" + "1" + "\t" + "0" + "\t"
