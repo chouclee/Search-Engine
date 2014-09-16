@@ -15,10 +15,13 @@ public class ScoreList {
     private int docid;
 
     private double score;
+    
+    private String extDocID;
 
     private ScoreListEntry(int docid, double score) {
       this.docid = docid;
       this.score = score;
+      this.extDocID = null;
     }
     
     public int getDocid() {
@@ -27,6 +30,18 @@ public class ScoreList {
     
     public double getScore() {
       return this.score;
+    }
+    
+    public String getExtDocID() {
+      return this.extDocID;
+    }
+    
+    private void initialExtDocID() {
+      try {
+       this.extDocID = QryEval.getExternalDocid(this.docid);
+      } catch (Exception e) {
+        // do nothing
+      }
     }
     
     // Implement Comparable Interface
@@ -39,7 +54,8 @@ public class ScoreList {
       else if (this.score < obj.score)
         return -1;
       else { // if scores are same, use external document id to compare
-        String extDocIdThis = "";
+       /* String extDocIdThis = "";
+        
         String extDocIdO = "";
         try {
           extDocIdThis = QryEval.getExternalDocid(this.docid);
@@ -47,7 +63,12 @@ public class ScoreList {
         } catch (Exception e) {
           // do nothing
         }
-        return -1*extDocIdThis.compareTo(extDocIdO);
+        return -1*extDocIdThis.compareTo(extDocIdO);*/
+        if (this.extDocID == null)
+          this.initialExtDocID();
+        if (obj.extDocID == null)
+          obj.initialExtDocID();
+        return -1*this.extDocID.compareTo(obj.extDocID);
       }
     }
   }
@@ -95,4 +116,17 @@ public class ScoreList {
   public double getDocidScore(int n) {
     return this.scores.get(n).score;
   }
+  
+  /**
+   * Initialize all external doc ID
+   * 
+   * @param 
+   * 
+   * @return
+   */
+  public void initalExtDocID() {
+    for (ScoreListEntry scoreList : scores)
+      scoreList.initialExtDocID();
+  }
+  
 }
