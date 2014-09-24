@@ -81,16 +81,42 @@ public class QryopSlScore extends QryopSl {
     if (result == null)
       return null;
 
-    for (int i = 0; i < result.invertedList.df; i++) {
-
-      // DIFFERENT RETRIEVAL MODELS IMPLEMENT THIS DIFFERENTLY.
-      // Unranked Boolean. All matching documents get a score of 1.0.
-      if (r instanceof RetrievalModelUnrankedBoolean)
+    
+    // DIFFERENT RETRIEVAL MODELS IMPLEMENT THIS DIFFERENTLY.
+    // Unranked Boolean. All matching documents get a score of 1.0.
+    if (r instanceof RetrievalModelUnrankedBoolean) {
+      for (int i = 0; i < result.invertedList.df; i++)
         result.docScores.add(result.invertedList.postings.get(i).docid, (float) 1.0);
-      else if (r instanceof RetrievalModelRankedBoolean)
+    } else if (r instanceof RetrievalModelRankedBoolean) {
+      for (int i = 0; i < result.invertedList.df; i++)
         // for RankedBoolean, use term frequency as score
-        result.docScores.add(result.invertedList.postings.get(i).docid, 
+        result.docScores.add(result.invertedList.postings.get(i).docid,
                 result.invertedList.getTf(i));
+    } else if (r instanceof RetrievalModelBMxx) {
+      // load parameters
+      float k_1 = (float) ((RetrievalModelBMxx) r).getParameter("k_1");
+      float b = (float) ((RetrievalModelBMxx) r).getParameter("b");
+      
+      // some constant parameters
+      int docFreq = result.invertedList.df;  // document frequency containing this term    
+      String field = result.invertedList.field; // term field   
+      int N = QryEval.READER.numDocs(); // total number of documents    
+      float avgDocLen = (float)QryEval.READER.getSumTotalTermFreq(field) / N; // average doc length
+      
+      // RSJ weight
+      float RSJWeight = (float) Math.log((N - docFreq + 0.5) / (docFreq + 0.5));
+      
+      int tf, docid;
+      long docLen;
+      float tfWeight;
+      for (int i = 0; i < docFreq; i++) {
+        tf = result.invertedList.getTf(i);
+        docid = result.invertedList.getDocid(i);
+        docLen = QryEval.docLenStore.getDocLength(field, docid);
+        // tf Weight
+        tfWeight = tf / (tf + k_1 * (1 - b + b * (docLen / avgDocLen)));
+        result.docScores.add(docid, RSJWeight * tfWeight);
+      }
     }
 
     // The SCORE operator should not return a populated inverted list.
