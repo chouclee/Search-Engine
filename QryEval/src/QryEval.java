@@ -212,13 +212,39 @@ public class QryEval {
     // is a tiny bit easier if unnecessary whitespace is removed.
 
     qString = qString.trim();
-
-    if (qString.charAt(0) != '#') {
-      if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean)
-        qString = "#or(" + qString + ")";
-      else if (r instanceof RetrievalModelBMxx)
-        qString = "#sum(" + qString + ")";
+    String defaultOp = "Error";
+    
+    if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean) {
+      defaultOp = "#OR(";
+    } else if (r instanceof RetrievalModelBMxx)
+      defaultOp = "#SUM(";
+    
+    if (qString.matches("^(?i)(#near|#syn).*$") || !qString.startsWith("#"))
+      qString = defaultOp + qString + ")";
+    else {
+      int count = 0;
+      boolean hasMet = false;
+      for (int i = 0; i < qString.length(); i++) {
+        if (qString.charAt(i) == '(') {
+          count++;
+          hasMet = true;
+        }
+        else if (qString.charAt(i) == ')')
+          count--;
+        if (hasMet && count == 0 && i != qString.length() - 1) {
+          qString = defaultOp + qString + ")";
+        }
+      }
     }
+
+    //if (qString.charAt(0) != '#') {
+   /* if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean) {
+      if (!qString.startsWith("(?i)#|#AND|#OR")
+    }
+        qString = "#or(" + qString + ")";
+    else if (r instanceof RetrievalModelBMxx)
+        qString = "#sum(" + qString + ")";*/
+    //}
 
     // Tokenize the query.
 
@@ -228,7 +254,7 @@ public class QryEval {
     // Each pass of the loop processes one token. To improve
     // efficiency and clarity, the query operator on the top of the
     // stack is also stored in currentOp.
-    boolean isFirstOp = true; // used to check whether this op is the left most op
+    //boolean isFirstOp = true; // used to check whether this op is the left most op
     while (tokens.hasMoreTokens()) {
 
       token = tokens.nextToken();
@@ -238,29 +264,29 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#and")) { // AND
         currentOp = new QryopSlAnd();
         stack.push(currentOp);
-        isFirstOp = false;
+        //isFirstOp = false;
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
-        isFirstOp = false;
+        //isFirstOp = false;
       } else if (token.equalsIgnoreCase("#or")) { // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
-        isFirstOp = false;
+        //isFirstOp = false;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         // if the query's highest level is near
         // we should warp this query with QryopSlScore
-        if (isFirstOp) {
-          stack.push(new QryopSlScore());
-          isFirstOp = false;
-        }
+        //if (isFirstOp) {
+        //  stack.push(new QryopSlScore());
+        //  isFirstOp = false;
+        //}
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
       } else if (token.equalsIgnoreCase("#sum")) {
         currentOp = new QryopSlSum();
         stack.push(currentOp);
-        isFirstOp = false;
+        //isFirstOp = false;
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -312,7 +338,7 @@ public class QryEval {
       System.err.println("Error:  Query syntax is incorrect.  " + qString);
       return null;
     }
-
+    System.out.println("Parsed Query: " + currentOp.toString());
     return currentOp;
   }
 
