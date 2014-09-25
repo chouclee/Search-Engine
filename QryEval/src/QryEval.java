@@ -43,6 +43,8 @@ public class QryEval {
     analyzer.setStemmer(EnglishAnalyzerConfigurable.StemmerType.KSTEM);
     //analyzer.setStemmer(EnglishAnalyzerConfigurable.StemmerType.PORTER);
   }
+  
+  static DocLengthStore docLenStore;
 
   /**
    * @param args
@@ -82,14 +84,28 @@ public class QryEval {
       System.err.println(usage);
       System.exit(1);
     }
-
-    // DocLengthStore s = new DocLengthStore(READER);
+    
+    // initialize doc length store
+    docLenStore = new DocLengthStore(READER);
+    
+    /** Number of Docs in this Index*/
+   // int N = READER.numDocs();
+    
     // set model
     RetrievalModel model = null;
-    if (params.get("retrievalAlgorithm").equalsIgnoreCase("UnrankedBoolean")) {
+    String algorithm = params.get("retrievalAlgorithm");
+    if (algorithm.equalsIgnoreCase("UnrankedBoolean")) {
       model = new RetrievalModelUnrankedBoolean();
-    } else if (params.get("retrievalAlgorithm").equalsIgnoreCase("RankedBoolean")) {
+    } else if (algorithm.equalsIgnoreCase("RankedBoolean")) {
       model = new RetrievalModelRankedBoolean();
+    } else if (algorithm.equalsIgnoreCase("BM25")){
+      model = new RetrievalModelBMxx();
+      if (!model.setParameter("k_1", params.get("BM25:k_1")) ||
+              !model.setParameter("b", params.get("BM25:b")) ||
+              !model.setParameter("k_3", params.get("BM25:k_3"))) {
+        System.err.println(usage);
+        System.exit(1);
+      }
     } else {
       System.err.println(usage);
       System.exit(1);
@@ -115,40 +131,11 @@ public class QryEval {
 
     // evaluate retrieval algorithm
     for (Integer queryID : queriesID) {
-      Qryop operation = parseQuery(queries.get(queryID));// retrieve first operation
+      Qryop operation = parseQuery(queries.get(queryID), model);// retrieve first operation
       System.out.println(queryID + "\t" + queries.get(queryID));
       // printResults(queryID, operation.evaluate(model));
       writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
-
-    /*
-     * The code below is an unorganized set of examples that show you different ways of accessing
-     * the index. Some of these are only useful in HW2 or HW3.
-     */
-    /*
-     * // Lookup the document length of the body field of doc 0.
-     * System.out.println(s.getDocLength("body", 0));
-     * 
-     * // How to use the term vector. TermVector tv = new TermVector(1, "body");
-     * System.out.println(tv.stemString(100)); // get the string for the 100th stem
-     * System.out.println(tv.stemDf(100)); // get its df System.out.println(tv.totalStemFreq(100));
-     * // get its ctf
-     * 
-     * /** The index is open. Start evaluating queries. The examples below show query trees for two
-     * simple queries. These are meant to illustrate how query nodes are created and connected.
-     * However your software will not create queries like this. Your software will use a query
-     * parser. See parseQuery.
-     * 
-     * The general pattern is to tokenize the query term (so that it gets converted to lowercase,
-     * stopped, stemmed, etc), create a Term node to fetch the inverted list, create a Score node to
-     * convert an inverted list to a score list, evaluate the query, and print results.
-     * 
-     * Modify the software so that you read a query from a file, parse it, and form the query tree
-     * automatically.
-     */
-
-    // Later HW assignments will use more RAM, so you want to be aware
-    // of how much memory your program uses.
 
     printMemoryUsage(false);
     long endTime = System.currentTimeMillis();
@@ -216,7 +203,7 @@ public class QryEval {
    *          A query tree
    * @throws IOException
    */
-  static Qryop parseQuery(String qString) throws IOException {
+  static Qryop parseQuery(String qString, RetrievalModel r) throws IOException {
 
     Qryop currentOp = null;
     Stack<Qryop> stack = new Stack<Qryop>();
@@ -227,7 +214,10 @@ public class QryEval {
     qString = qString.trim();
 
     if (qString.charAt(0) != '#') {
-      qString = "#or(" + qString + ")";
+      if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean)
+        qString = "#or(" + qString + ")";
+      else if (r instanceof RetrievalModelBMxx)
+        qString = "#sum(" + qString + ")";
     }
 
     // Tokenize the query.
@@ -267,6 +257,10 @@ public class QryEval {
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
+      } else if (token.equalsIgnoreCase("#sum")) {
+        currentOp = new QryopSlSum();
+        stack.push(currentOp);
+        isFirstOp = false;
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it

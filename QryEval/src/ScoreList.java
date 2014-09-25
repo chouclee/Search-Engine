@@ -116,17 +116,4 @@ public class ScoreList {
   public double getDocidScore(int n) {
     return this.scores.get(n).score;
   }
-  
-  /**
-   * Initialize all external doc ID
-   * 
-   * @param 
-   * 
-   * @return
-   */
-  public void initalExtDocID() {
-    for (ScoreListEntry scoreList : scores)
-      scoreList.initialExtDocID();
-  }
-  
 }

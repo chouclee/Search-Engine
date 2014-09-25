@@ -1,7 +1,7 @@
 indexPath=/home/happyuser/Downloads/index
 retrievalAlgorithm=BM25
-k_1=1.2
-b=0.75
-k_3=0
-queryFilePath=queriesOr.txt
+BM25:k_1=1.2
+BM25:b=0.75
+BM25:k_3=0
+queryFilePath=queries.txt
 trecEvalOutputPath=HW1-queries-UB.teIn

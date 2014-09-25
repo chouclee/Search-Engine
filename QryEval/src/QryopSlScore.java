@@ -58,6 +58,8 @@ public class QryopSlScore extends QryopSl {
       return (evaluateBoolean(r));
     if (r instanceof RetrievalModelRankedBoolean)
       return (evaluateBoolean(r));
+    if (r instanceof RetrievalModelBMxx)
+      return (evaluateBMxx(r));
     return null;
   }
 
@@ -92,16 +94,47 @@ public class QryopSlScore extends QryopSl {
         // for RankedBoolean, use term frequency as score
         result.docScores.add(result.invertedList.postings.get(i).docid,
                 result.invertedList.getTf(i));
-    } else if (r instanceof RetrievalModelBMxx) {
+    }
+    // The SCORE operator should not return a populated inverted list.
+    // If there is one, replace it with an empty inverted list.
+
+    if (result.invertedList.df > 0)
+      result.invertedList = new InvList();
+
+    return result;
+  }
+  /**
+   * Evaluate the query operator for BMxx retrieval model.
+   * 
+   * @param r
+   *          A retrieval model that controls how the operator behaves.
+   * @return The result of evaluating the query.
+   * @throws IOException
+   */
+  public QryResult evaluateBMxx(RetrievalModel r) throws IOException {
+
+    // Evaluate the query argument.
+
+    QryResult result = args.get(0).evaluate(r);
+
+    // Each pass of the loop computes a score for one document. Note:
+    // If the evaluate operation above returned a score list (which is
+    // very possible), this loop gets skipped.
+    if (result == null)
+      return null;
+
+    
+    if (r instanceof RetrievalModelBMxx) {
       // load parameters
-      float k_1 = (float) ((RetrievalModelBMxx) r).getParameter("k_1");
-      float b = (float) ((RetrievalModelBMxx) r).getParameter("b");
+      float k_1 = (float)((RetrievalModelBMxx) r).getParameter("k_1");
+      float b = (float)((RetrievalModelBMxx) r).getParameter("b");
       
       // some constant parameters
       int docFreq = result.invertedList.df;  // document frequency containing this term    
       String field = result.invertedList.field; // term field   
       int N = QryEval.READER.numDocs(); // total number of documents    
-      float avgDocLen = (float)QryEval.READER.getSumTotalTermFreq(field) / N; // average doc length
+      float avgDocLen = (float)QryEval.READER.getSumTotalTermFreq(field) / 
+                           QryEval.READER.getDocCount(field); // average doc length
       
       // RSJ weight
       float RSJWeight = (float) Math.log((N - docFreq + 0.5) / (docFreq + 0.5));
@@ -114,7 +147,7 @@ public class QryopSlScore extends QryopSl {
         docid = result.invertedList.getDocid(i);
         docLen = QryEval.docLenStore.getDocLength(field, docid);
         // tf Weight
-        tfWeight = tf / (tf + k_1 * (1 - b + b * (docLen / avgDocLen)));
+        tfWeight = tf / (tf + k_1 * (1 - b + b * docLen / avgDocLen));
         result.docScores.add(docid, RSJWeight * tfWeight);
       }
     }

@@ -31,5 +31,4 @@ public class RetrievalModelRankedBoolean extends RetrievalModel {
       parameterName);
     return false;
   }
-
 }

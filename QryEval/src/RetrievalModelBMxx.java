@@ -7,7 +7,7 @@ public class RetrievalModelBMxx extends RetrievalModel {
   /**
    * Constructor for RetrievalModelBMxx
    */
-  public RetrievalModelBMxx(double k_1, double b, double k_3) {
+  public RetrievalModelBMxx() {
     paramMap = new HashMap<String, Double>();
   }
   
