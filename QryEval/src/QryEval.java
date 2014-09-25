@@ -133,6 +133,7 @@ public class QryEval {
     for (Integer queryID : queriesID) {
       Qryop operation = parseQuery(queries.get(queryID), model);// retrieve first operation
       System.out.println(queryID + "\t" + queries.get(queryID));
+      System.out.println("Parsed Query: " + operation.toString());
       // printResults(queryID, operation.evaluate(model));
       writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
@@ -233,6 +234,7 @@ public class QryEval {
           count--;
         if (hasMet && count == 0 && i != qString.length() - 1) {
           qString = defaultOp + qString + ")";
+          break;
         }
       }
     }
@@ -308,26 +310,15 @@ public class QryEval {
         // NOTE: You should do lexical processing of the token before
         // creating the query term, and you should check to see whether
         // the token specifies a particular field (e.g., apple.title).
-        String[] tokenized = tokenizeQuery(token);
-        // System.out.println(tokenized.length);
-        if (tokenized != null && tokenized.length != 0) {
-          token = tokenized[0];
-          if (token.matches("(?i).+(\\.)(body|url|keywords|title|inlink)")) {
-            String[] splited = token.split("\\.");
-            token = splited[0];
-            field = splited[1];
-            currentOp.add(new QryopIlTerm(token, field));
-          } else if (tokenized.length > 1
-                  && tokenized[1].matches("(body|url|keyword|title|inlink)")) {
-            // Edge case :
-            // if the term is a number dot field (like 2.keywords), after being tokenized, 
-            // number and field would be separated into two columns, and "keywords" would 
-            // be truncated to "keyword"
-            currentOp.add(new QryopIlTerm(token, tokenized[1]));
-          } else
-            currentOp.add(new QryopIlTerm(token));
-
+        field = "body";
+        if (token.matches("(?i).+(\\.)(body|url|keywords|title|inlink)")) {
+          String[] splited = token.split("\\.");
+          token = splited[0];
+          field = splited[1];
         }
+        String[] tokenized = tokenizeQuery(token);
+        if (tokenized != null && tokenized.length != 0)
+          currentOp.add(new QryopIlTerm(tokenized[0], field));
       }
     }
 
@@ -338,7 +329,7 @@ public class QryEval {
       System.err.println("Error:  Query syntax is incorrect.  " + qString);
       return null;
     }
-    System.out.println("Parsed Query: " + currentOp.toString());
+    //System.out.println("Parsed Query: " + currentOp.toString());
     return currentOp;
   }
 
