@@ -11,8 +11,7 @@ public class ScoreList {
   
   public ArrayList<Integer> ctf = new ArrayList<Integer>();
   public ArrayList<Float> maxLikelyEstim = new ArrayList<Float>();
-  public String field;
-  long docLenCollection;
+  public ArrayList<String> field = new ArrayList<String>();
 
   // A little utilty class to create a <docid, score> object.
 

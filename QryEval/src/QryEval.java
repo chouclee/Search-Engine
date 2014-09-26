@@ -227,7 +227,7 @@ public class QryEval {
     else if (r instanceof RetrievalModelBMxx)
       defaultOp = "#SUM(";
     else if (r instanceof RetrievalModelIndri)
-      defaultOp = "#AND";
+      defaultOp = "#AND(";
     
     if (qString.matches("^(?i)(#near|#syn).*$") || !qString.startsWith("#"))
       qString = defaultOp + qString + ")";

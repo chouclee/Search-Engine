@@ -193,8 +193,8 @@ public class QryopSlScore extends QryopSl {
       long docLenCollection = QryEval.READER.getSumTotalTermFreq(field);
       
       result.docScores.ctf.add(result.invertedList.ctf);
-      result.docScores.field = field;
-      result.docScores.docLenCollection = docLenCollection;
+      result.docScores.field.add(field);
+     // result.docScores.docLenCollection = docLenCollection;
       
 
       float maxLikelyEstim = (float) result.invertedList.ctf / docLenCollection;
