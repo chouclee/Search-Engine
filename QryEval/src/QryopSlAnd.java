@@ -47,8 +47,14 @@ public class QryopSlAnd extends QryopSl {
       return (evaluateBoolean(r));
     else if (r instanceof RetrievalModelRankedBoolean)
       return (evaluateBoolean(r));
+    else if (r instanceof RetrievalModelIndri)
+      return evaluateIndri(r);
 
     return null;
+  }
+
+  private int getArgsNum() {
+    return this.args.size();
   }
 
   /**
@@ -71,7 +77,7 @@ public class QryopSlAnd extends QryopSl {
     // improves the efficiency of exact-match AND without changing
     // the result.
     Collections.sort(this.daatPtrs);
-    
+
     // Exact-match AND requires that ALL scoreLists contain a
     // document id. Use the first (shortest) list to control the
     // search for matches.
@@ -86,7 +92,7 @@ public class QryopSlAnd extends QryopSl {
 
       int ptr0Docid = ptr0.scoreList.getDocid(ptr0.nextDoc);
       double docScore = 1.0;
-      
+
       if (r instanceof RetrievalModelRankedBoolean)
         docScore = (double) ptr0.scoreList.getDocidScore(ptr0.nextDoc);
 
@@ -120,6 +126,76 @@ public class QryopSlAnd extends QryopSl {
     return result;
   }
 
+  /**
+   * Evaluates the query operator for Indri retrieval model, including any child operators and
+   * returns the result.
+   * 
+   * @param r
+   *          A retrieval model that controls how the operator behaves.
+   * @return The result of evaluating the query.
+   * @throws IOException
+   */
+  public QryResult evaluateIndri(RetrievalModel r) throws IOException {
+    allocDaaTPtrs(r);
+    QryResult result = new QryResult();
+
+    double docScoreOld;
+    int ptriDocid, ptr0Docid;
+    double q = (double) getArgsNum();
+    DaaTPtr ptr0 = this.daatPtrs.get(0);
+    Comparator<ScoreList.ScoreListEntry> DOCID_ORDER = new ScoreList.DocidOrder();
+    for (int i = 1; i < this.daatPtrs.size(); i++) {
+      DaaTPtr ptri = this.daatPtrs.get(i);
+      int docNumPtr0 = ptr0.scoreList.scores.size(); // get number of docs of first argument
+      int docNumPtri = ptri.scoreList.scores.size(); // get number of docs of i_th argument
+      int m = 0, n = 0;
+      while (m < docNumPtr0 && n < docNumPtri) {
+        ptr0Docid = ptr0.scoreList.getDocid(m);
+        ptriDocid = ptri.scoreList.getDocid(n);
+        if (ptr0Docid < ptriDocid) {
+          docScoreOld = ptr0.scoreList.getDocidScore(m);
+          ptr0.scoreList.scores.get(m).setScore(docScoreOld * getDefaultScore(r, ptr0Docid));
+          m++;
+        } else if (ptr0Docid == ptriDocid) {
+          docScoreOld = ptr0.scoreList.getDocidScore(m);
+          ptr0.scoreList.scores.get(m).setScore(docScoreOld * ptri.scoreList.getDocidScore(n));
+          m++;
+          n++;
+        } else {
+          docScoreOld = ptr0.scoreList.getDocidScore(n);
+          ptr0.scoreList.add(ptriDocid, docScoreOld * getDefaultScore(r, ptriDocid));
+          n++;
+        }
+      }
+      while (m < docNumPtr0) {
+        ptr0Docid = ptr0.scoreList.getDocid(m);
+        docScoreOld = ptr0.scoreList.getDocidScore(m);
+        ptr0.scoreList.scores.get(m).setScore(docScoreOld * getDefaultScore(r, ptr0Docid));
+        m++;
+      }
+      while (n < docNumPtri) {
+        ptriDocid = ptri.scoreList.getDocid(n);
+        docScoreOld = ptri.scoreList.getDocidScore(n);
+        ptr0.scoreList.add(ptriDocid, docScoreOld * getDefaultScore(r, ptriDocid));
+        n++;
+      }
+      Collections.sort(ptr0.scoreList.scores, DOCID_ORDER);
+      
+      
+    }
+    for (int i = 0; i < ptr0.scoreList.scores.size(); i++) {
+      result.docScores.add(ptr0.scoreList.getDocid(i), 
+              Math.pow(ptr0.scoreList.scores.get(i).getScore(), 1/q));
+    }
+    
+    for (int i = 0; i < this.daatPtrs.size(); i++) {
+      result.docScores.maxLikelyEstim.addAll(this.daatPtrs.get(i).scoreList.maxLikelyEstim);
+    }
+    freeDaaTPtrs();
+
+    return result;
+  }
+
   /*
    * Calculate the default score for the specified document if it does not match the query operator.
    * This score is 0 for many retrieval models, but not all retrieval models.
@@ -136,6 +212,9 @@ public class QryopSlAnd extends QryopSl {
       return (0.0);
     if (r instanceof RetrievalModelRankedBoolean)
       return 0.0;
+    if (r instanceof RetrievalModelIndri) {
+      return 1.0;
+    }
 
     return 0.0;
   }

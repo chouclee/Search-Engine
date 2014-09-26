@@ -2,13 +2,13 @@ import java.util.HashMap;
 
 
 public class RetrievalModelBMxx extends RetrievalModel {
-  private HashMap<String, Double> paramMap;
+  private HashMap<String, Float> paramMap;
   
   /**
    * Constructor for RetrievalModelBMxx
    */
   public RetrievalModelBMxx() {
-    paramMap = new HashMap<String, Double>();
+    paramMap = new HashMap<String, Float>();
   }
   
   @Override
@@ -32,18 +32,19 @@ public class RetrievalModelBMxx extends RetrievalModel {
    */
   public boolean setParameter(String parameterName, String value) {
     // TODO Auto-generated method stub
-    if (parameterName.equalsIgnoreCase("k_1"))
-      paramMap.put("k_1", Double.parseDouble(value));
-    else if (parameterName.equalsIgnoreCase("b"))
-      paramMap.put("b", Double.parseDouble(value));
-    else if (parameterName.equalsIgnoreCase("k_3"))
-      paramMap.put("k_3", Double.parseDouble(value));
+    float num = Float.parseFloat(value);
+    if (parameterName.equalsIgnoreCase("k_1") && num >= 0)
+      paramMap.put("k_1", num);
+    else if (parameterName.equalsIgnoreCase("b") && num >= 0 && num <= 1)
+      paramMap.put("b", num);
+    else if (parameterName.equalsIgnoreCase("k_3") && num >= 0)
+      paramMap.put("k_3", num);
     else 
       return false;
     return true;
   }
   
-  public double getParameter(String parameterName) throws IllegalArgumentException {
+  public float getParameter(String parameterName) throws IllegalArgumentException {
     if (!paramMap.containsKey(parameterName))
       throw new IllegalArgumentException();
     return paramMap.get(parameterName); 

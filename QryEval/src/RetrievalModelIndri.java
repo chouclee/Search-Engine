@@ -43,7 +43,7 @@ public class RetrievalModelIndri extends RetrievalModel {
     return true;
   }
   
-  public double getParameter(String parameterName) throws IllegalArgumentException {
+  public float getParameter(String parameterName) throws IllegalArgumentException {
     if (!paramMap.containsKey(parameterName))
       throw new IllegalArgumentException();
     return paramMap.get(parameterName); 

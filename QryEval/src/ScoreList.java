@@ -8,6 +8,11 @@
 import java.util.*;
 
 public class ScoreList {
+  
+  public ArrayList<Integer> ctf = new ArrayList<Integer>();
+  public ArrayList<Float> maxLikelyEstim = new ArrayList<Float>();
+  public String field;
+  long docLenCollection;
 
   // A little utilty class to create a <docid, score> object.
 
@@ -30,6 +35,10 @@ public class ScoreList {
     
     public double getScore() {
       return this.score;
+    }
+    
+    public void setScore(double score) {
+      this.score = score;
     }
     
     public String getExtDocID() {
@@ -79,8 +88,19 @@ public class ScoreList {
       return a.compareTo(b);
     }
   }
+  
+  public static class DocidOrder implements Comparator<ScoreListEntry> {
+    public int compare(ScoreListEntry a, ScoreListEntry b) {
+      if (a.docid < b.docid)
+        return -1;
+      else if (a.docid > b.docid)
+        return +1;
+      return 0;
+    }
+  }
 
   List<ScoreListEntry> scores = new ArrayList<ScoreListEntry>();
+
 
   /**
    * Append a document score to a score list.

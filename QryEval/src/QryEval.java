@@ -106,6 +106,13 @@ public class QryEval {
         System.err.println(usage);
         System.exit(1);
       }
+    } else if (algorithm.equalsIgnoreCase("Indri")) {
+      model = new RetrievalModelIndri();
+      if (!model.setParameter("mu", params.get("Indri:mu")) ||
+              !model.setParameter("lambda", params.get("Indri:lambda"))) {
+        System.err.println(usage);
+        System.exit(1);
+      } 
     } else {
       System.err.println(usage);
       System.exit(1);
@@ -215,10 +222,12 @@ public class QryEval {
     qString = qString.trim();
     String defaultOp = "Error";
     
-    if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean) {
+    if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean)
       defaultOp = "#OR(";
-    } else if (r instanceof RetrievalModelBMxx)
+    else if (r instanceof RetrievalModelBMxx)
       defaultOp = "#SUM(";
+    else if (r instanceof RetrievalModelIndri)
+      defaultOp = "#AND";
     
     if (qString.matches("^(?i)(#near|#syn).*$") || !qString.startsWith("#"))
       qString = defaultOp + qString + ")";

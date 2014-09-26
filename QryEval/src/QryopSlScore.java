@@ -184,25 +184,31 @@ public class QryopSlScore extends QryopSl {
 
     if (r instanceof RetrievalModelIndri) {
       // load parameters
-      float mu = ((RetrievalModelBMxx) r).getParameter("mu");
-      float lambda = ((RetrievalModelBMxx) r).getParameter("lambda");
+      float mu = ((RetrievalModelIndri) r).getParameter("mu");
+      float lambda = ((RetrievalModelIndri) r).getParameter("lambda");
 
       // some constant parameters
       int docFreq = result.invertedList.df; // document frequency containing this term
       String field = result.invertedList.field; // term field
       long docLenCollection = QryEval.READER.getSumTotalTermFreq(field);
+      
+      result.docScores.ctf.add(result.invertedList.ctf);
+      result.docScores.field = field;
+      result.docScores.docLenCollection = docLenCollection;
+      
 
-      float P_MLE = (float) result.invertedList.ctf / docLenCollection;
+      float maxLikelyEstim = (float) result.invertedList.ctf / docLenCollection;
+      result.docScores.maxLikelyEstim.add(maxLikelyEstim);
       int tf, docid;
       long docLen;
-      
+
       for (int i = 0; i < docFreq; i++) {
         tf = result.invertedList.getTf(i);
         docid = result.invertedList.getDocid(i);
         docLen = QryEval.docLenStore.getDocLength(field, docid);
         // tf Weight
-        result.docScores.add(docid, lambda * (tf + mu * P_MLE) / (docLen + mu) + (1 - lambda)
-                * P_MLE);
+        result.docScores.add(docid, lambda * (tf + mu * maxLikelyEstim) / (docLen + mu)
+                + (1 - lambda) * maxLikelyEstim);
       }
     }
 
