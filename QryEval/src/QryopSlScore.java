@@ -12,6 +12,11 @@ import java.io.*;
 import java.util.*;
 
 public class QryopSlScore extends QryopSl {
+  
+  public String field; // term's field
+  public int collectionTermFreq; // term's ctf
+  public long collectionLength; // document length in
+  public float maxLikeliEstim;
 
   /**
    * Construct a new SCORE operator. The SCORE operator accepts just one argument.
@@ -189,16 +194,16 @@ public class QryopSlScore extends QryopSl {
 
       // some constant parameters
       int docFreq = result.invertedList.df; // document frequency containing this term
-      String field = result.invertedList.field; // term field
-      long docLenCollection = QryEval.READER.getSumTotalTermFreq(field);
-      
+      this.field = result.invertedList.field; // term field
+      this.collectionLength = QryEval.READER.getSumTotalTermFreq(field);
+      this.collectionTermFreq = result.invertedList.ctf;
       result.docScores.ctf.add(result.invertedList.ctf);
       result.docScores.field.add(field);
      // result.docScores.docLenCollection = docLenCollection;
       
 
-      float maxLikelyEstim = (float) result.invertedList.ctf / docLenCollection;
-      result.docScores.maxLikelyEstim.add(maxLikelyEstim);
+      this.maxLikeliEstim = (float) collectionTermFreq / collectionLength;
+      result.docScores.maxLikelyEstim.add(maxLikeliEstim);
       int tf, docid;
       long docLen;
 
@@ -207,8 +212,8 @@ public class QryopSlScore extends QryopSl {
         docid = result.invertedList.getDocid(i);
         docLen = QryEval.docLenStore.getDocLength(field, docid);
         // tf Weight
-        result.docScores.add(docid, lambda * (tf + mu * maxLikelyEstim) / (docLen + mu)
-                + (1 - lambda) * maxLikelyEstim);
+        result.docScores.add(docid, lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
+                + (1 - lambda) * maxLikeliEstim);
       }
     }
 
@@ -237,6 +242,12 @@ public class QryopSlScore extends QryopSl {
       return (0.0);
     if (r instanceof RetrievalModelRankedBoolean)
       return (0.0);
+    if (r instanceof RetrievalModelIndri) {
+      float mu = ((RetrievalModelIndri) r).getParameter("mu");
+      float lambda = ((RetrievalModelIndri) r).getParameter("lambda");
+      long docLength = QryEval.docLenStore.getDocLength(field, (int)docid);
+      return  (lambda * mu / (docLength + mu) + (1 - lambda)) * maxLikeliEstim;
+    }
 
     return 0.0;
   }

@@ -139,78 +139,40 @@ public class QryopSlAnd extends QryopSl {
     allocDaaTPtrs(r);
     QryResult result = new QryResult();
 
-    double docScoreOld;
-    int ptriDocid, ptr0Docid;
+    int ptriDocid;
     int q = getArgsNum();
-    DaaTPtr ptr0 = this.daatPtrs.get(0);
-    Comparator<ScoreList.ScoreListEntry> DOCID_ORDER = new ScoreList.DocidOrder();
-    for (int i = 1; i < this.daatPtrs.size(); i++) {
-      DaaTPtr ptri = this.daatPtrs.get(i);
-      int docNumPtr0 = ptr0.scoreList.scores.size(); // get number of docs of first argument
-      int docNumPtri = ptri.scoreList.scores.size(); // get number of docs of i_th argument
-      int m = 0, n = 0;
-      while (m < docNumPtr0 && n < docNumPtri) {
-        ptr0Docid = ptr0.scoreList.getDocid(m);
-        ptriDocid = ptri.scoreList.getDocid(n);
-        if (ptr0Docid < ptriDocid) {
-          docScoreOld = ptr0.scoreList.getDocidScore(m);
-          ptr0.scoreList.scores.get(m).setScore(docScoreOld * getDefaultScore(r, ptri, ptr0Docid));
-          m++;
-        } else if (ptr0Docid == ptriDocid) {
-          docScoreOld = ptr0.scoreList.getDocidScore(m);
-          ptr0.scoreList.scores.get(m).setScore(docScoreOld * ptri.scoreList.getDocidScore(n));
-          m++;
-          n++;
-        } else {
-          docScoreOld = ptr0.scoreList.getDocidScore(n);
-          ptr0.scoreList.add(ptriDocid, docScoreOld * getDefaultScore(r, ptr0, ptriDocid));
-          n++;
-        }
-      }
-      while (m < docNumPtr0) {
-        ptr0Docid = ptr0.scoreList.getDocid(m);
-        docScoreOld = ptr0.scoreList.getDocidScore(m);
-        ptr0.scoreList.scores.get(m).setScore(docScoreOld * getDefaultScore(r, ptri, ptr0Docid));
-        m++;
-      }
-      while (n < docNumPtri) {
-        ptriDocid = ptri.scoreList.getDocid(n);
-        docScoreOld = ptri.scoreList.getDocidScore(n);
-        ptr0.scoreList.add(ptriDocid, docScoreOld * getDefaultScore(r, ptr0, ptriDocid));
-        n++;
-      }
-      Collections.sort(ptr0.scoreList.scores, DOCID_ORDER);
-
-    }
-    for (int i = 0; i < ptr0.scoreList.scores.size(); i++) {
-      result.docScores.add(ptr0.scoreList.getDocid(i),
-              Math.pow(ptr0.scoreList.scores.get(i).getScore(), 1.0 / q));
-    }
-
+    ArrayList<Integer> uniqueDocid = getUniqueDocid();
+    int docidSize = uniqueDocid.size();
+    ArrayList<Double> scores = new ArrayList<Double>();
+    for (int i = 0; i < docidSize; i++)
+      scores.add(1.0);
+    
+    //Comparator<ScoreList.ScoreListEntry> DOCID_ORDER = new ScoreList.DocidOrder();
     for (int i = 0; i < this.daatPtrs.size(); i++) {
       DaaTPtr ptri = this.daatPtrs.get(i);
-      result.docScores.maxLikelyEstim.addAll(ptri.scoreList.maxLikelyEstim);
-      result.docScores.field.addAll(ptri.scoreList.field);
+      int m = 0;
+      for (int n = 0; n < ptri.size; n++) {
+        ptriDocid = ptri.scoreList.getDocid(n);
+        while (uniqueDocid.get(m) != ptriDocid) {
+          scores.set(m, scores.get(m) * ((QryopSl)this.args.get(i)).getDefaultScore(r, 
+                  uniqueDocid.get(m)));
+          m++;
+        }
+        scores.set(m, scores.get(m) * ptri.scoreList.getDocidScore(n));
+        m++;
+      }
+      while (m < docidSize) {
+        scores.set(m, scores.get(m) * ((QryopSl)this.args.get(i)).getDefaultScore(r, 
+                uniqueDocid.get(m)));
+        m++;
+      }
+    }
+    for (int i = 0; i < uniqueDocid.size(); i++) {
+      result.docScores.add(uniqueDocid.get(i), Math.pow(scores.get(i), 1.0 / q));
     }
     freeDaaTPtrs();
 
     return result;
-  }
-
-  public double getDefaultScore(RetrievalModel r, DaaTPtr ptr, long docid) throws IOException {
-    int q = ptr.scoreList.maxLikelyEstim.size();
-    double defaultScore = 1.0;
-    float mu = ((RetrievalModelIndri) r).getParameter("mu");
-    float lambda = ((RetrievalModelIndri) r).getParameter("lambda");
-    long docLength;
-    String field;
-    for (int i = 0; i < q; i++) {
-      field = ptr.scoreList.field.get(i);
-      docLength = QryEval.docLenStore.getDocLength(field, (int)docid);
-      defaultScore *= ptr.scoreList.maxLikelyEstim.get(i)
-              * (lambda * mu / (docLength + mu) + 1 - lambda);
-    }
-    return Math.pow(defaultScore, 1.0 / q);
   }
 
   /*
@@ -230,7 +192,12 @@ public class QryopSlAnd extends QryopSl {
     if (r instanceof RetrievalModelRankedBoolean)
       return 0.0;
     if (r instanceof RetrievalModelIndri) {
-      return 1.0;
+      double defaultScore = 1.0;
+      int q = this.args.size();
+      for (Qryop operation: this.args) {
+        defaultScore *= ((QryopSl)operation).getDefaultScore(r, docid);
+      }
+      return Math.pow(defaultScore, 1.0/q);
     }
 
     return 0.0;

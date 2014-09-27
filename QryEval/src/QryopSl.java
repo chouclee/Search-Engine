@@ -10,6 +10,8 @@
  */
 
 import java.io.*;
+import java.util.ArrayList;
+
 
 public abstract class QryopSl extends Qryop {
 
@@ -40,6 +42,43 @@ public abstract class QryopSl extends Qryop {
 
       this.daatPtrs.add(ptri);
     }
+  }
+  
+  /**
+   * get all uique docids, add them to an ArrayList
+   * @return All doc id appears in this operator.
+   */
+  public ArrayList<Integer> getUniqueDocid() {
+    if (this.daatPtrs == null)
+      return null;
+    ArrayList<Integer> uniqueDocidList = new ArrayList<Integer>();
+    int currSmallestDocid = Integer.MIN_VALUE;
+    DaaTPtr ptr;
+    int smallestOfThisIter;
+    boolean hasMoreDoc = true;
+    while (hasMoreDoc) {
+      hasMoreDoc = false;
+      smallestOfThisIter = Integer.MAX_VALUE;
+      for (int i = 0; i < this.daatPtrs.size(); i++) {
+        ptr = this.daatPtrs.get(i);
+        if (ptr.nextDoc >= ptr.size)
+          continue;
+        if (ptr.scoreList.getDocid(ptr.nextDoc) == currSmallestDocid)
+          ptr.nextDoc++;
+        if (ptr.nextDoc < ptr.size)
+          hasMoreDoc = true;
+        if (ptr.nextDoc < ptr.size && ptr.scoreList.getDocid(ptr.nextDoc) < smallestOfThisIter)
+          smallestOfThisIter = ptr.scoreList.getDocid(ptr.nextDoc);
+      }
+      if (!hasMoreDoc)
+        break;
+      uniqueDocidList.add(smallestOfThisIter);
+      currSmallestDocid = smallestOfThisIter;
+    }
+    // reset of ptr's nextdoc
+    for (int i = 0; i < this.daatPtrs.size(); i++)
+      this.daatPtrs.get(i).nextDoc = 0;
+    return uniqueDocidList;
   }
 
   /*
