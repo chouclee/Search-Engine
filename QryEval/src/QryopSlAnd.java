@@ -139,29 +139,31 @@ public class QryopSlAnd extends QryopSl {
     allocDaaTPtrs(r);
     QryResult result = new QryResult();
 
-    int ptriDocid;
     int q = getArgsNum();
-    ArrayList<Integer> uniqueDocid = getUniqueDocid();
+    ArrayList<Integer> uniqueDocid = getUniqueDocid(); // get list of all doc id
     int docidSize = uniqueDocid.size();
-    ArrayList<Double> scores = new ArrayList<Double>();
+    ArrayList<Double> scores = new ArrayList<Double>();// initialize socres
     for (int i = 0; i < docidSize; i++)
       scores.add(1.0);
     
-    //Comparator<ScoreList.ScoreListEntry> DOCID_ORDER = new ScoreList.DocidOrder();
-    for (int i = 0; i < this.daatPtrs.size(); i++) {
+    int ptriDocid;
+    // iterate over all terms
+    for (int i = 0; i < this.daatPtrs.size(); i++) { 
       DaaTPtr ptri = this.daatPtrs.get(i);
       int m = 0;
-      for (int n = 0; n < ptri.size; n++) {
+      for (int n = 0; n < ptri.size; n++) { // iterate over all doc id in this term
         ptriDocid = ptri.scoreList.getDocid(n);
-        while (uniqueDocid.get(m) != ptriDocid) {
+        while (uniqueDocid.get(m) != ptriDocid) { 
+          // if doc id in uniqueDocid is less than term's current doc id
           scores.set(m, scores.get(m) * ((QryopSl)this.args.get(i)).getDefaultScore(r, 
-                  uniqueDocid.get(m)));
+                  uniqueDocid.get(m)));     // calculate default score
           m++;
         }
+        // now they have the same doc id, simply multiply both socores
         scores.set(m, scores.get(m) * ptri.scoreList.getDocidScore(n));
         m++;
       }
-      while (m < docidSize) {
+      while (m < docidSize) {  // deal with the doc id that are not in this term
         scores.set(m, scores.get(m) * ((QryopSl)this.args.get(i)).getDefaultScore(r, 
                 uniqueDocid.get(m)));
         m++;

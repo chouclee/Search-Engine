@@ -8,11 +8,6 @@
 import java.util.*;
 
 public class ScoreList {
-  
-  public ArrayList<Integer> ctf = new ArrayList<Integer>();
-  public ArrayList<Float> maxLikelyEstim = new ArrayList<Float>();
-  public ArrayList<String> field = new ArrayList<String>();
-
   // A little utilty class to create a <docid, score> object.
 
   protected class ScoreListEntry implements Comparable<ScoreListEntry> {
@@ -87,7 +82,7 @@ public class ScoreList {
       return a.compareTo(b);
     }
   }
-  
+  @Deprecated
   public static class DocidOrder implements Comparator<ScoreListEntry> {
     public int compare(ScoreListEntry a, ScoreListEntry b) {
       if (a.docid < b.docid)

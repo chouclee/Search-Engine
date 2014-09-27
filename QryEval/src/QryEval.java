@@ -145,7 +145,7 @@ public class QryEval {
       writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
 
-    printMemoryUsage(false);
+    printMemoryUsage(true);
     long endTime = System.currentTimeMillis();
     System.out.println("Total running time: " + (endTime - startTime)/1000 + "s.");
 
@@ -248,17 +248,6 @@ public class QryEval {
       }
     }
 
-    //if (qString.charAt(0) != '#') {
-   /* if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean) {
-      if (!qString.startsWith("(?i)#|#AND|#OR")
-    }
-        qString = "#or(" + qString + ")";
-    else if (r instanceof RetrievalModelBMxx)
-        qString = "#sum(" + qString + ")";*/
-    //}
-
-    // Tokenize the query.
-
     StringTokenizer tokens = new StringTokenizer(qString, "\t\n\r ,()", true);
     String token = null, field = null;
 
@@ -285,12 +274,6 @@ public class QryEval {
         stack.push(currentOp);
         //isFirstOp = false;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
-        // if the query's highest level is near
-        // we should warp this query with QryopSlScore
-        //if (isFirstOp) {
-        //  stack.push(new QryopSlScore());
-        //  isFirstOp = false;
-        //}
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
