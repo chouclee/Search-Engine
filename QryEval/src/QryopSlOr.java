@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.util.*;
 
+
 public class QryopSlOr extends QryopSl {
 
   /**
@@ -53,7 +54,7 @@ public class QryopSlOr extends QryopSl {
    * @return The result of evaluating the query.
    * @throws IOException
    */
-  public QryResult evaluateBoolean(RetrievalModel r) throws IOException {
+    public QryResult evaluateBoolean(RetrievalModel r) throws IOException {
 
     // Initialization
 
@@ -96,6 +97,50 @@ public class QryopSlOr extends QryopSl {
       result.docScores.add(sortedKeys.get(i), docidScoreMap.get(sortedKeys.get(i)));
     return result;
   }
+  /*
+  public QryResult evaluateBoolean(RetrievalModel r) throws IOException {
+  long st = System.currentTimeMillis();
+  // Initialization
+
+  allocDaaTPtrs(r);
+  QryResult result = new QryResult();
+
+  ArrayList<Integer> uniqueDocid = getUniqueDocid(); // get list of all doc id
+  int docidSize = uniqueDocid.size();
+  ArrayList<Double> scores = new ArrayList<Double>();// initialize socres
+  for (int i = 0; i < docidSize; i++)
+    scores.add(1.0);
+  
+  if (r instanceof RetrievalModelUnrankedBoolean) {
+    for (int i = 0; i < uniqueDocid.size(); i++)
+      result.docScores.add(uniqueDocid.get(i), scores.get(i));
+  } else if (r instanceof RetrievalModelRankedBoolean) {
+    int ptriDocid;
+    double oldScore;
+    // iterate over all terms
+    for (int i = 0; i < this.daatPtrs.size(); i++) { 
+      DaaTPtr ptri = this.daatPtrs.get(i);
+      int m = 0;
+      for (int n = 0; n < ptri.size; n++) { // iterate over all doc id in this term
+        ptriDocid = ptri.scoreList.getDocid(n);
+        while (uniqueDocid.get(m) != ptriDocid)
+          m++;
+        // now they have the same doc id, choose the max one
+        oldScore = ptri.scoreList.getDocidScore(n);
+        scores.set(m, (scores.get(m) > oldScore) ? scores.get(m) : oldScore);
+        m++;
+      }
+    }
+    for (int i = 0; i < uniqueDocid.size(); i++)
+      result.docScores.add(uniqueDocid.get(i), scores.get(i));
+  }
+
+  freeDaaTPtrs();
+  
+  long end = System.currentTimeMillis();
+  System.out.println(end-st + "ms");
+  return result;
+}*/
 
   /*
    * Calculate the default score for the specified document if it does not match the query operator.
