@@ -71,7 +71,7 @@ public class QryopIlSyn extends QryopIl {
       for (int i = 0; i < this.daatPtrs.size(); i++) {
         DaaTPtr ptri = this.daatPtrs.get(i);
 
-        if (ptri.invList.getDocid(ptri.nextDoc) == nextDocid) {
+        if (ptri.nextDoc < ptri.size && ptri.invList.getDocid(ptri.nextDoc) == nextDocid) {
           positions.addAll(ptri.invList.postings.get(ptri.nextDoc).positions);
           ptri.nextDoc++;
         }
@@ -109,7 +109,7 @@ public class QryopIlSyn extends QryopIl {
 
     for (int i = 0; i < this.daatPtrs.size(); i++) {
       DaaTPtr ptri = this.daatPtrs.get(i);
-      if (nextDocid > ptri.invList.getDocid(ptri.nextDoc))
+      if (ptri.nextDoc < ptri.size && nextDocid > ptri.invList.getDocid(ptri.nextDoc))
         nextDocid = ptri.invList.getDocid(ptri.nextDoc);
     }
 
