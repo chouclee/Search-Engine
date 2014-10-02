@@ -56,14 +56,24 @@ public class QryopIlWindow extends QryopIl {
     
     // very similar to QryopSlAnd
     DaaTPtr ptr0 = this.daatPtrs.get(0);
-
+    
+    int numArgs = this.daatPtrs.size();
+    
+    if (numArgs == 1) {
+      result.invertedList = ptr0.invList;
+      freeDaaTPtrs();
+      return result;
+    }
+    
     EVALUATEDOCUMENTS: for (; ptr0.nextDoc < ptr0.invList.df; ptr0.nextDoc++) {
 
       int ptr0Docid = ptr0.invList.getDocid(ptr0.nextDoc);
       
       // pointer to the current doc's invlist's posting
       //InvList.DocPosting pst0 = ptr0.invList.postings.get(ptr0.nextDoc);
-      int numArgs = this.daatPtrs.size();
+      
+      
+
       // Do the other query arguments have the ptr0Docid?    
       EVALUATETERM: for (int j = 1; j < this.daatPtrs.size(); j++) {
 
