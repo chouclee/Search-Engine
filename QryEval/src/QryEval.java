@@ -277,6 +277,10 @@ public class QryEval {
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
+      } else if (token.matches("(?i)#window/\\d+")) {// Window
+        int dist = Integer.parseInt(token.split("/")[1]);
+        currentOp = new QryopIlWindow(dist);
+        stack.push(currentOp);
       } else if (token.equalsIgnoreCase("#sum")) {
         currentOp = new QryopSlSum();
         stack.push(currentOp);
