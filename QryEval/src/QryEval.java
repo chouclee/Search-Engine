@@ -267,6 +267,9 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#wand")) { // WAND
         currentOp = new QryopSlWAnd();
         stack.push(currentOp);
+      } else if (token.equalsIgnoreCase("#wsum")) { // WAND
+        currentOp = new QryopSlWSum();
+        stack.push(currentOp);
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
@@ -308,6 +311,13 @@ public class QryEval {
         if (currentOp instanceof QryopSlWAnd) {
           float weight = Float.parseFloat(token.trim());
           ((QryopSlWAnd)currentOp).addWeight(weight);
+          token = tokens.nextToken();
+          while (token.matches("[ ,(\t\n\r]") && tokens.hasMoreTokens()) {
+            token = tokens.nextToken();
+          }
+        } else if (currentOp instanceof QryopSlWSum) {
+          float weight = Float.parseFloat(token.trim());
+          ((QryopSlWSum)currentOp).addWeight(weight);
           token = tokens.nextToken();
           while (token.matches("[ ,(\t\n\r]") && tokens.hasMoreTokens()) {
             token = tokens.nextToken();
