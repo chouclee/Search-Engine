@@ -103,6 +103,9 @@ public class QryopSlWAnd extends QryopSl {
         m++;
       }
     }
+    for (int i = 0; i < uniqueDocid.size(); i++)
+      result.docScores.add(uniqueDocid.get(i), scores.get(i));
+    
     freeDaaTPtrs();
 
     return result;
@@ -148,7 +151,7 @@ public class QryopSlWAnd extends QryopSl {
     String result = new String();
 
     for (int i = 0; i < this.args.size(); i++)
-      result += this.args.get(i).toString() + " ";
+      result += this.weights.get(i) + " " + this.args.get(i).toString() + " ";
 
     return ("#WAND( " + result + ")");
   }
