@@ -109,7 +109,7 @@ public class QryopIlWindow extends QryopIl {
             while (hasMorePos) {
               checkValid = validation(termPos);
               if (checkValid[0] == 1) { //found pair
-                tempPos.add(checkValid[2]); // add last position to temporary position list
+                tempPos.add(termPos[checkValid[2]]); // add last position to temporary position list
                 for (int i = 0; i < numArgs; i++) {
                   posPtr[i]++; // update i th pointer
                   if (posPtr[i] >= termLength[i]) {// check i th pointer
@@ -143,12 +143,9 @@ public class QryopIlWindow extends QryopIl {
     return result;
   }
   
-  @SuppressWarnings("unused")
   private int[] validation(int[] termPos) {
     int minPos = termPos[0];
     int maxPos = termPos[0];
-    //int minIdx = 0, maxIdx = 0;  
-    //int isValidPair = 0;
     int result[] = new int[3];
     // isValid result[0]
     // minIdx - result[1]
@@ -158,7 +155,7 @@ public class QryopIlWindow extends QryopIl {
         minPos = termPos[i];
         result[1] = i;
       }
-      else {
+      else if (termPos[i] > maxPos){
         maxPos = termPos[i];
         result[2] = i;
       }

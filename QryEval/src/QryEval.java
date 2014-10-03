@@ -229,7 +229,7 @@ public class QryEval {
     else if (r instanceof RetrievalModelIndri)
       defaultOp = "#AND(";
     
-    if (qString.matches("^(?i)(#near|#syn).*$") || !qString.startsWith("#"))
+    if (qString.matches("^(?i)(#near|#syn|#window).*$") || !qString.startsWith("#"))
       qString = defaultOp + qString + ")";
     else {
       int count = 0;
@@ -264,15 +264,15 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#and")) { // AND
         currentOp = new QryopSlAnd();
         stack.push(currentOp);
-        //isFirstOp = false;
+      } else if (token.equalsIgnoreCase("#wand")) { // WAND
+        currentOp = new QryopSlWAnd();
+        stack.push(currentOp);
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
-        //isFirstOp = false;
       } else if (token.equalsIgnoreCase("#or")) { // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
-        //isFirstOp = false;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
@@ -284,7 +284,6 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#sum")) {
         currentOp = new QryopSlSum();
         stack.push(currentOp);
-        //isFirstOp = false;
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -306,6 +305,14 @@ public class QryEval {
         // NOTE: You should do lexical processing of the token before
         // creating the query term, and you should check to see whether
         // the token specifies a particular field (e.g., apple.title).
+        if (currentOp instanceof QryopSlWAnd) {
+          float weight = Float.parseFloat(token.trim());
+          ((QryopSlWAnd)currentOp).addWeight(weight);
+          token = tokens.nextToken();
+          while (token.matches("[ ,(\t\n\r]") && tokens.hasMoreTokens()) {
+            token = tokens.nextToken();
+          }
+        }
         field = "body";
         if (token.matches("(?i).+(\\.)(body|url|keywords|title|inlink)")) {
           String[] splited = token.split("\\.");

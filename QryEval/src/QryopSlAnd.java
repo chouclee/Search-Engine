@@ -53,10 +53,6 @@ public class QryopSlAnd extends QryopSl {
     return null;
   }
 
-  private int getArgsNum() {
-    return this.args.size();
-  }
-
   /**
    * Evaluates the query operator for boolean retrieval models, including any child operators and
    * returns the result.
@@ -139,7 +135,7 @@ public class QryopSlAnd extends QryopSl {
     allocDaaTPtrs(r);
     QryResult result = new QryResult();
 
-    int q = getArgsNum();
+    int q = this.args.size();
     ArrayList<Integer> uniqueDocid = getUniqueDocid(); // get list of all doc id
     int docidSize = uniqueDocid.size();
     ArrayList<Double> scores = new ArrayList<Double>();// initialize socres
