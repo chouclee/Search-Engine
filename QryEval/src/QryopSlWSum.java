@@ -103,8 +103,10 @@ public class QryopSlWSum extends QryopSl {
         m++;
       }
     }
+    for (int i = 0; i < uniqueDocid.size(); i++)
+      result.docScores.add(uniqueDocid.get(i), scores.get(i));
+    
     freeDaaTPtrs();
-
     return result;
   }
 
