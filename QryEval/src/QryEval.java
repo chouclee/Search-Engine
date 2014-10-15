@@ -262,41 +262,33 @@ public class QryEval {
       token = tokens.nextToken();
 
       if (token.matches("[ ,(\t\n\r]")) {
-        // Ignore most delimiters.
+        continue;// Ignore most delimiters.
       } else if (token.equalsIgnoreCase("#and")) { // AND
         currentOp = new QryopSlAnd();
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.equalsIgnoreCase("#wand")) { // WAND
         currentOp = new QryopSlWAnd();
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.equalsIgnoreCase("#wsum")) { // WAND
         currentOp = new QryopSlWSum();
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.equalsIgnoreCase("#or")) { // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.matches("(?i)#window/\\d+")) {// Window
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlWindow(dist);
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.equalsIgnoreCase("#sum")) {
         currentOp = new QryopSlSum();
         stack.push(currentOp);
-        isWeight = true;
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -339,8 +331,8 @@ public class QryEval {
                 currentOp instanceof QryopSlWSum)) {
           currentOp.weights.remove(currentOp.weights.size() - 1);
         }
-        isWeight = true;
       }
+      isWeight = true;
     }
 
     // A broken structured query can leave unprocessed tokens on the
