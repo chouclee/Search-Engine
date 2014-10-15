@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 
 public class QryopSlWAnd extends QryopSl {
-  private ArrayList<Float> weights;
+  //private ArrayList<Float> weights;
   /**
    * It is convenient for the constructor to accept a variable number of arguments. Thus new qryopSum
    * (arg1, arg2, arg3, ...).

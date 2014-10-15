@@ -220,6 +220,7 @@ public class QryEval {
     // is a tiny bit easier if unnecessary whitespace is removed.
 
     qString = qString.trim();
+    System.out.println("Input Query: " + qString);
     String defaultOp = "Error";
     
     if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean)
@@ -250,7 +251,8 @@ public class QryEval {
 
     StringTokenizer tokens = new StringTokenizer(qString, "\t\n\r ,()", true);
     String token = null, field = null;
-
+    boolean isWeight = true;
+    //float weight = 0.0f;
     // Each pass of the loop processes one token. To improve
     // efficiency and clarity, the query operator on the top of the
     // stack is also stored in currentOp.
@@ -264,29 +266,37 @@ public class QryEval {
       } else if (token.equalsIgnoreCase("#and")) { // AND
         currentOp = new QryopSlAnd();
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.equalsIgnoreCase("#wand")) { // WAND
         currentOp = new QryopSlWAnd();
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.equalsIgnoreCase("#wsum")) { // WAND
         currentOp = new QryopSlWSum();
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.equalsIgnoreCase("#syn")) { // SYN
         currentOp = new QryopIlSyn();
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.equalsIgnoreCase("#or")) { // OR
         currentOp = new QryopSlOr();
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.matches("(?i)#near/\\d+")) {// NEAR
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlNear(dist);
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.matches("(?i)#window/\\d+")) {// Window
         int dist = Integer.parseInt(token.split("/")[1]);
         currentOp = new QryopIlWindow(dist);
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.equalsIgnoreCase("#sum")) {
         currentOp = new QryopSlSum();
         stack.push(currentOp);
+        isWeight = true;
       } else if (token.startsWith(")")) { // Finish current query operator.
         // If the current query operator is not an argument to
         // another query operator (i.e., the stack is empty when it
@@ -308,21 +318,14 @@ public class QryEval {
         // NOTE: You should do lexical processing of the token before
         // creating the query term, and you should check to see whether
         // the token specifies a particular field (e.g., apple.title).
-        if (currentOp instanceof QryopSlWAnd) {
+        if ((currentOp instanceof QryopSlWAnd ||
+                currentOp instanceof QryopSlWSum) && isWeight) {
           float weight = Float.parseFloat(token.trim());
-          ((QryopSlWAnd)currentOp).addWeight(weight);
-          token = tokens.nextToken();
-          while (token.matches("[ ,(\t\n\r]") && tokens.hasMoreTokens()) {
-            token = tokens.nextToken();
-          }
-        } else if (currentOp instanceof QryopSlWSum) {
-          float weight = Float.parseFloat(token.trim());
-          ((QryopSlWSum)currentOp).addWeight(weight);
-          token = tokens.nextToken();
-          while (token.matches("[ ,(\t\n\r]") && tokens.hasMoreTokens()) {
-            token = tokens.nextToken();
-          }
+          isWeight = false;
+          currentOp.weights.add(weight);  
+          continue;
         }
+        
         field = "body";
         if (token.matches("(?i).+(\\.)(body|url|keywords|title|inlink)")) {
           String[] splited = token.split("\\.");
@@ -332,6 +335,11 @@ public class QryEval {
         String[] tokenized = tokenizeQuery(token);
         if (tokenized != null && tokenized.length != 0)
           currentOp.add(new QryopIlTerm(tokenized[0], field));
+        else if (!isWeight && (currentOp instanceof QryopSlWAnd ||
+                currentOp instanceof QryopSlWSum)) {
+          currentOp.weights.remove(currentOp.weights.size() - 1);
+        }
+        isWeight = true;
       }
     }
 

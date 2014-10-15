@@ -104,7 +104,7 @@ public class QryopIlWindow extends QryopIl {
               pstj = ptr.invList.postings.get(ptr.nextDoc); // get postings
               termPos[i] = pstj.positions.get(posPtr[i]); // 
               termLength[i] = pstj.positions.size();
-              posPtr[i]++;
+              //posPtr[i]++;
             }
             while (hasMorePos) {
               checkValid = validation(termPos);

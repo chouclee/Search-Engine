@@ -38,6 +38,7 @@ public abstract class Qryop {
 
   protected ArrayList<Qryop> args = new ArrayList<Qryop>();
   protected List<DaaTPtr> daatPtrs = new ArrayList<DaaTPtr>();
+  protected ArrayList<Float> weights;
   
   /**
    *  Appends an argument to the list of query operator arguments.  This
