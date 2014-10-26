@@ -117,6 +117,11 @@ public class QryEval {
       System.err.println(usage);
       System.exit(1);
     }
+    
+    // add query expansion for Indri
+    if (params.containsKey("fb") && params.get("fb").equalsIgnoreCase("true")) {
+      
+    }
 
     // load all queries
     if (!params.containsKey("queryFilePath")) {
@@ -305,7 +310,8 @@ public class QryEval {
 
         Qryop arg = currentOp;
         currentOp = stack.peek();
-        currentOp.add(arg);
+        if (arg.args.size() != 0)
+          currentOp.add(arg);
       } else {
         // NOTE: You should do lexical processing of the token before
         // creating the query term, and you should check to see whether
@@ -423,8 +429,7 @@ public class QryEval {
         // put 100 matches in a PriorityQueue, traverse the rest matches, if any
         // match is bigger than the smallest one in the PQ, remove the head of PQ
         // add this bigger one
-        //result.docScores.initalExtDocID(); //initialize all external doc id
-        Comparator<ScoreList.ScoreListEntry> SCORE_ORDER = new ScoreList.ScoreOrder();
+        /*Comparator<ScoreList.ScoreListEntry> SCORE_ORDER = new ScoreList.ScoreOrder();
         PriorityQueue<ScoreList.ScoreListEntry> pq = new PriorityQueue<ScoreList.ScoreListEntry>(
                 numDocs, SCORE_ORDER);
         int cnt = 0;
@@ -440,7 +445,8 @@ public class QryEval {
         ScoreList.ScoreListEntry[] topRank = new ScoreList.ScoreListEntry[numDocs];
         for (int i = numDocs; i > 0; i--) {
           topRank[i - 1] = pq.poll();
-        }
+        }*/
+        ScoreList.ScoreListEntry[] topRank = getTopNDocuments(result, numDocs);
         // Long endTime = System.currentTimeMillis();
         // System.out.println("sort result : " + (endTime - startTime)/1000 + "s");
         for (int i = 0; i < numDocs; i++) {
@@ -457,6 +463,33 @@ public class QryEval {
       } catch (Exception e) {
       }
     }
+  }
+  
+  /**
+   * get top N documents from the query evaluation result
+   * @param result
+   * @param numDocs
+   * @return
+   */
+  static ScoreList.ScoreListEntry[] getTopNDocuments(QryResult result, int numDocs) {
+    Comparator<ScoreList.ScoreListEntry> SCORE_ORDER = new ScoreList.ScoreOrder();
+    PriorityQueue<ScoreList.ScoreListEntry> pq = new PriorityQueue<ScoreList.ScoreListEntry>(
+            numDocs, SCORE_ORDER);
+    int cnt = 0;
+    for (; cnt < numDocs; cnt++) {
+      pq.add(result.docScores.scores.get(cnt));
+    }
+    for (; cnt < result.docScores.scores.size(); cnt++) {
+      if (result.docScores.scores.get(cnt).compareTo(pq.peek()) > 0) {
+        pq.poll();
+        pq.add(result.docScores.scores.get(cnt));
+      }
+    }
+    ScoreList.ScoreListEntry[] topRank = new ScoreList.ScoreListEntry[numDocs];
+    for (int i = numDocs; i > 0; i--) {
+      topRank[i - 1] = pq.poll();
+    }
+    return topRank;
   }
 
   /**
