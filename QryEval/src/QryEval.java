@@ -117,11 +117,6 @@ public class QryEval {
       System.err.println(usage);
       System.exit(1);
     }
-    
-    // add query expansion for Indri
-    if (params.containsKey("fb") && params.get("fb").equalsIgnoreCase("true")) {
-      
-    }
 
     // load all queries
     if (!params.containsKey("queryFilePath")) {
@@ -143,6 +138,27 @@ public class QryEval {
 
     // evaluate retrieval algorithm
     for (Integer queryID : queriesID) {
+      /*
+       * add query expansion for Indri
+       */
+      if (params.containsKey("fb") && params.get("fb").equalsIgnoreCase("true")) {
+        ArrayList<Integer> topNDocID = null ;
+        ArrayList<Double> scores = null;
+        int topN = Integer.parseInt(params.get("fbDocs"));
+        if (params.containsKey("fbInitialRankingFile")) {
+          ArrayList<ArrayList> result = getTopDocId(params.get("fbInitialRankingFile"), queryID, topN);
+          topNDocID = result.get(0);
+          scores = result.get(1);
+        }
+        else {
+          Qryop operation = parseQuery(queries.get(queryID), model);// retrieve first operation
+          ScoreList.ScoreListEntry[] topNScoreList = getTopNDocuments(operation.evaluate(model), topN);
+          for (int i = 0; i < topNScoreList.length; i++)
+            topNDocID.add(topNScoreList[i].getDocid());
+        }
+      }
+      
+      /************************************************************************/
       Qryop operation = parseQuery(queries.get(queryID), model);// retrieve first operation
       System.out.println(queryID + "\t" + queries.get(queryID));
       System.out.println("Parsed Query: " + operation.toString());
@@ -155,7 +171,47 @@ public class QryEval {
     System.out.println("Total running time: " + (endTime - startTime)/1000 + "s.");
 
   }
+  
+  /**
+   * Get top N documents' internal ID
+   * @param rankingFile
+   * @param queryID
+   * @param numDocs
+   * @return
+   */
+  @SuppressWarnings("rawtypes")
+  static ArrayList<ArrayList> getTopDocId(String rankingFile, int queryID, int numDocs) {
+    Scanner scan = null;
+    try {
+      scan = new Scanner(new File(rankingFile));
+    } catch (FileNotFoundException e1) {
+      // TODO Auto-generated catch block
+      e1.printStackTrace();
+    }
+    String line = null;
+    ArrayList<ArrayList> result = new ArrayList<ArrayList>();
+    ArrayList<Integer> docIdList = new ArrayList<Integer>();
+    ArrayList<Double> scoreList = new ArrayList<Double>();
+    do {
+      line = scan.nextLine().trim();
+      String[] splited = line.split("\\s+");
+      if (Integer.parseInt(splited[0]) == queryID) {
+        try {
+          docIdList.add(getInternalDocid(splited[2]));
+          scoreList.add(Double.parseDouble(splited[4]));
+        } catch (Exception e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+    } while (scan.hasNext() && result.size() < numDocs);
+    scan.close();
+    result.add(docIdList);
+    result.add(scoreList);
+    return result;
+  }
 
+  
   /**
    * Write an error message and exit. This can be done in other ways, but I wanted something that
    * takes just one statement so that it is easy to insert checks without cluttering the code.
