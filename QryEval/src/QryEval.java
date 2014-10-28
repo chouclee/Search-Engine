@@ -144,22 +144,37 @@ public class QryEval {
       if (params.containsKey("fb") && params.get("fb").equalsIgnoreCase("true")) {
         ArrayList<Integer> topNDocID = null ;
         ArrayList<Double> scores = null;
-        int topN = Integer.parseInt(params.get("fbDocs"));
+        int topNDocs = Integer.parseInt(params.get("fbDocs"));
+        double fbMu = Double.parseDouble(params.get("fbMu"));
+        int topNTerms = Integer.parseInt(params.get("fbTerms"));
+        double originalWeight = Double.parseDouble(params.get("fbOrigWeight"));
         if (params.containsKey("fbInitialRankingFile")) {
-          ArrayList<ArrayList> result = getTopDocId(params.get("fbInitialRankingFile"), queryID, topN);
+          ArrayList<ArrayList> result = getTopDocId(params.get("fbInitialRankingFile"), queryID, topNDocs);
           topNDocID = result.get(0);
           scores = result.get(1);
         }
         else {
-          Qryop operation = parseQuery(queries.get(queryID), model);// retrieve first operation
-          ScoreList.ScoreListEntry[] topNScoreList = getTopNDocuments(operation.evaluate(model), topN);
-          for (int i = 0; i < topNScoreList.length; i++)
+          Qryop operation = parseQuery(queryProcess(queries.get(queryID), model), model);// retrieve first operation
+          ScoreList.ScoreListEntry[] topNScoreList = getTopNDocuments(operation.evaluate(model), topNDocs);
+          topNDocID = new ArrayList<Integer>();
+          scores = new ArrayList<Double>();
+          for (int i = 0; i < topNScoreList.length; i++) {
             topNDocID.add(topNScoreList[i].getDocid());
+            scores.add(topNScoreList[i].getScore());
+          }
         }
+        QryExpansion qryExp = new QryExpansion(topNDocID, scores, fbMu, topNTerms);
+        String learnedQuery = qryExp.evaluate(model);
+        writeExpansionQueryFile(params.get("fbExpansionQueryFile"), queryID, learnedQuery);
+       
+        // update query
+        String newQuery = "#WAND(" + originalWeight + " " + queryProcess(queries.get(queryID), model) +
+                " " + (1-originalWeight) + " " + learnedQuery + ")";
+        queries.put(queryID, newQuery);
       }
       
       /************************************************************************/
-      Qryop operation = parseQuery(queries.get(queryID), model);// retrieve first operation
+      Qryop operation = parseQuery(queryProcess(queries.get(queryID), model), model);// retrieve first operation
       System.out.println(queryID + "\t" + queries.get(queryID));
       System.out.println("Parsed Query: " + operation.toString());
       // printResults(queryID, operation.evaluate(model));
@@ -262,21 +277,15 @@ public class QryEval {
       return hits[0].doc;
     }
   }
-
+  
+  
   /**
-   * parseQuery converts a query string into a query tree.
-   * 
+   * Add defalut query operator if there is a need
    * @param qString
-   *          A string containing a query.
-   * @param qTree
-   *          A query tree
-   * @throws IOException
+   * @param r
+   * @return
    */
-  static Qryop parseQuery(String qString, RetrievalModel r) throws IOException {
-
-    Qryop currentOp = null;
-    Stack<Qryop> stack = new Stack<Qryop>();
-
+  static String queryProcess(String qString, RetrievalModel r) {
     // Add a default query operator to an unstructured query. This
     // is a tiny bit easier if unnecessary whitespace is removed.
 
@@ -309,6 +318,23 @@ public class QryEval {
         }
       }
     }
+    
+    return qString;
+  }
+
+  /**
+   * parseQuery converts a query string into a query tree.
+   * 
+   * @param qString
+   *          A string containing a query.
+   * @param qTree
+   *          A query tree
+   * @throws IOException
+   */
+  static Qryop parseQuery(String qString, RetrievalModel r) throws IOException {
+
+    Qryop currentOp = null;
+    Stack<Qryop> stack = new Stack<Qryop>();
 
     StringTokenizer tokens = new StringTokenizer(qString, "\t\n\r ,()", true);
     String token = null, field = null;
@@ -511,6 +537,29 @@ public class QryEval {
                   + topRank[i].getScore() + "\t" + "run-1\n");
         }
       }
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        writer.close();
+      } catch (Exception e) {
+      }
+    }
+  }
+  
+  /**
+   * Write learned query to the Expansion Query File
+   * @param filePath
+   * @param queryID
+   * @param query
+   */
+  static void writeExpansionQueryFile(String filePath, int queryID, String query) {
+    BufferedWriter writer = null;
+    File file = new File(filePath);
+    try {
+      writer = new BufferedWriter(new FileWriter(file, true));
+
+      writer.write(queryID + ": " + query + "\n");
     } catch (Exception e) {
       e.printStackTrace();
     } finally {

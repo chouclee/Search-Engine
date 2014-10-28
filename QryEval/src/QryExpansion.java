@@ -73,6 +73,7 @@ public class QryExpansion {
     double docScore, termScore;
     int tf, collectionTermFreq;
     long docLen, collectionLength;
+    float maxLikeliEstim;
     String stemString;
     for (int i = 0; i < docIds.size(); i++) { // starts from 1!!!! 0 stands for stopwords
       // assume field comes from field
@@ -80,8 +81,7 @@ public class QryExpansion {
       docScore = scores.get(i);
       collectionLength = QryEval.READER.getSumTotalTermFreq("body");// collection length
       docLen = QryEval.docLenStore.getDocLength("body", docIds.get(i)); // document length
-      collectionTermFreq = (int) termVec.totalStemFreq(i); //ctf
-      float maxLikeliEstim = (float) collectionTermFreq / collectionLength; //P_MLE
+
       
       // travese a single document
       for (int j = 0; j < termVec.stemsLength(); j++) {
@@ -94,6 +94,8 @@ public class QryExpansion {
             if (splited.length >=2 && !splited[1].matches("(body|url|keywords|title|inlink)"))
               continue;
         }
+        collectionTermFreq = (int) termVec.totalStemFreq(j); //ctf
+        maxLikeliEstim = (float) collectionTermFreq / collectionLength; //P_MLE
         tf = termVec.stemFreq(j);
         // given a document, calculate term score for this term
         termScore = (tf + mu*maxLikeliEstim)/(docLen + mu) * docScore * Math.log(1.0/maxLikeliEstim);
