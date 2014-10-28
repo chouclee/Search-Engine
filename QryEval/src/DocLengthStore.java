@@ -23,7 +23,7 @@ public class DocLengthStore  {
    */
   public DocLengthStore(IndexReader reader) throws IOException {
     this.reader = reader;
-    for (String field : MultiFields.getIndexedFields(reader)) {
+    for (String field : MultiFields.getIndexedFields(this.reader)) {
       this.values.put(field, MultiDocValues.getNormValues(reader, field));      
     }
   }

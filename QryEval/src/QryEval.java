@@ -51,6 +51,7 @@ public class QryEval {
    *          The only argument is the path to the parameter file.
    * @throws Exception
    */
+  @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
     long startTime = System.currentTimeMillis();
     
@@ -149,6 +150,7 @@ public class QryEval {
         int topNTerms = Integer.parseInt(params.get("fbTerms"));
         double originalWeight = Double.parseDouble(params.get("fbOrigWeight"));
         if (params.containsKey("fbInitialRankingFile")) {
+          @SuppressWarnings("rawtypes")
           ArrayList<ArrayList> result = getTopDocId(params.get("fbInitialRankingFile"), queryID, topNDocs);
           topNDocID = result.get(0);
           scores = result.get(1);
@@ -219,7 +221,7 @@ public class QryEval {
           e.printStackTrace();
         }
       }
-    } while (scan.hasNext() && result.size() < numDocs);
+    } while (scan.hasNext() && docIdList.size() < numDocs);
     scan.close();
     result.add(docIdList);
     result.add(scoreList);
