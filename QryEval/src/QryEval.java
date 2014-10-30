@@ -282,7 +282,7 @@ public class QryEval {
   
   
   /**
-   * Add defalut query operator if there is a need
+   * Add default query operator if there is a need
    * @param qString
    * @param r
    * @return
@@ -292,7 +292,7 @@ public class QryEval {
     // is a tiny bit easier if unnecessary whitespace is removed.
 
     qString = qString.trim();
-    System.out.println("Input Query: " + qString);
+    //System.out.println("Input Query: " + qString);
     String defaultOp = "Error";
     
     if (r instanceof RetrievalModelRankedBoolean || r instanceof RetrievalModelUnrankedBoolean)
