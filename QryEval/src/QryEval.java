@@ -183,7 +183,7 @@ public class QryEval {
       writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
 
-    printMemoryUsage(true);
+    printMemoryUsage(false);
     long endTime = System.currentTimeMillis();
     System.out.println("Total running time: " + (endTime - startTime)/1000 + "s.");
 
