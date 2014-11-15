@@ -114,7 +114,11 @@ public class QryEval {
         System.err.println(usage);
         System.exit(1);
       } 
-    } else {
+    } else if (algorithm.equalsIgnoreCase("letor")) {
+      LearnToRank letor = new LearnToRank(params);
+      //model = new RetrievalModelLetor();
+    }
+    else {
       System.err.println(usage);
       System.exit(1);
     }
