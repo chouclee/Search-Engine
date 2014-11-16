@@ -16,6 +16,7 @@ public class FeatureVector {
   private String query;
   private int queryLength;
   private Hashtable<String, Integer> termTable;
+  private RetrievalModelLearnToRank model;
   
   public FeatureVector(RetrievalModel r, String query, Map<Integer, Double> pageRank) {
     this(r, query, pageRank, "");
@@ -23,6 +24,8 @@ public class FeatureVector {
   
   public FeatureVector(RetrievalModel r, String query, Map<Integer, Double> pageRank,
           String featureDisable) {
+    this.model = (RetrievalModelLearnToRank)r;
+    
     this.query = query;
     Hashtable<String, Integer> termTable = new Hashtable<String, Integer>();
     String[] terms = query.split("\\s+");
@@ -53,7 +56,7 @@ public class FeatureVector {
    
   }
   
-  public void addDocID(int docid) throws IOException {
+  public void addDocID(RetrievalModel r, int docid) throws Exception {
     Document d = QryEval.READER.document(docid);
     
     //f1: Spam score for d (read from index).
@@ -85,26 +88,35 @@ public class FeatureVector {
     TermVector termVec = null;
     if (!!featureDisable[4] || !featureDisable[5] || !featureDisable[5])
       termVec = new TermVector(docid, "body");
-    if (termVec == null) {
+    /*if (termVec == null) {
       // field doesn't exist!
       System.err.println("Doc missing field: " + docid + " " + "body");
       System.exit(1);
-    }
+    }*/
     //f5: BM25 score for <q, dbody>.
     if (!featureDisable[4]) {
-      double bm25Body = 0;
-      features.get(4).add(bm25Body);
+      if (termVec != null) {
+        double bm25Body = BM25Evaluation(termVec, "body", docid);
+        features.get(4).add(bm25Body);
+      }
+      else features.get(4).add(0.0);
     }
     //f6: Indri score for <q, dbody>.
     if (!featureDisable[5]) {
-      double indriBody = 0;
-      features.get(5).add(indriBody);
+      if (termVec != null) {
+        double indriBody = IndriEvaluation(termVec, "body", docid);
+        features.get(5).add(indriBody);
+      }
+      else features.get(5).add(0.0);
     }
     
     //f7: Term overlap score for <q, dbody>.
     if (!featureDisable[6]) {
-      double overlapBody = overlap(termVec, query);
-      features.get(6).add(overlapBody);
+      if (termVec != null) {      
+        double overlapBody = overlap(termVec, query);
+        features.get(6).add(overlapBody);
+      }
+      else features.get(6).add(0.0);
     }
     
     //---------------Title------------------//
@@ -112,18 +124,27 @@ public class FeatureVector {
       termVec = new TermVector(docid, "title");
     //f8: BM25 score for <q, dtitle>.
     if (!featureDisable[7]) {
-      double bm25Title = 0;
-      features.get(7).add(bm25Title);
+      if (termVec != null) {
+        double bm25Title = BM25Evaluation(termVec, "title", docid);
+        features.get(7).add(bm25Title);
+      }
+      else features.get(7).add(0.0);
     }
     //f9: Indri score for <q, dtitle>.
     if (!featureDisable[8]) {
-      double indriTitle = 0;
-      features.get(8).add(indriTitle);
+      if (termVec != null) {
+        double indriTitle = IndriEvaluation(termVec, "title", docid);
+        features.get(8).add(indriTitle);
+      }
+      else features.get(8).add(0.0);
     }
     //f10: Term overlap score for <q, dtitle>.
     if (!featureDisable[9]) {
-      double overlapTitle = overlap(termVec, query);
-      features.get(9).add(overlapTitle);
+      if (termVec != null) {
+        double overlapTitle = overlap(termVec, query);
+        features.get(9).add(overlapTitle);
+      }
+      else features.get(9).add(0.0);
     }
     
     //---------------URL------------------//
@@ -131,18 +152,27 @@ public class FeatureVector {
       termVec = new TermVector(docid, "url");
     //f11: BM25 score for <q, durl>.
     if (!featureDisable[10]) {
-      double bm25Url = 0;
-      features.get(10).add(bm25Url);
+      if (termVec != null) {
+        double bm25Url = BM25Evaluation(termVec, "url", docid);
+        features.get(10).add(bm25Url);
+      }
+      else features.get(10).add(0.0);
     }
     //f12: Indri score for <q, durl>.
     if (!featureDisable[11]) {
-      double indriUrl = 0;
-      features.get(11).add(indriUrl);
+      if (termVec != null) {
+        double indriUrl = IndriEvaluation(termVec, "url", docid);
+        features.get(11).add(indriUrl);
+      }
+      else features.get(11).add(0.0);
     }
     //f13: Term overlap score for <q, durl>.
     if (!featureDisable[12]) {
-      double overlapUrl = overlap(termVec, query);
-      features.get(12).add(overlapUrl);
+      if (termVec != null) {
+        double overlapUrl = overlap(termVec, query);
+        features.get(12).add(overlapUrl);
+      }
+      else features.get(12).add(0.0);
     }
     
     //-------------Inlink------------------//
@@ -150,18 +180,27 @@ public class FeatureVector {
       termVec = new TermVector(docid, "inlink");
     //f14: BM25 score for <q, dinlink>.
     if (!featureDisable[13]) {
-      double bm25Inlink = 0;
-      features.get(13).add(bm25Inlink);
+      if (termVec != null) {
+        double bm25Inlink = BM25Evaluation(termVec, "inlink", docid);;
+        features.get(13).add(bm25Inlink);
+      }
+      else features.get(13).add(0.0);
     }
     //f15: Indri score for <q, dinlink>.
     if (!featureDisable[14]) {
-      double indriInlink = 0;
-      features.get(14).add(indriInlink);
+      if (termVec != null) {
+        double indriInlink = IndriEvaluation(termVec, "inlink", docid);
+        features.get(14).add(indriInlink);
+      }
+      else features.get(14).add(0.0);
     }
     //f16: Term overlap score for <q, dinlink>.
     if (!featureDisable[15]) {
-      double overlapInlink = overlap(termVec, query);
-      features.get(15).add(overlapInlink);
+      if (termVec != null) {
+        double overlapInlink = overlap(termVec, query);
+        features.get(15).add(overlapInlink);
+      }
+      else features.get(15).add(0.0);
     }
     
     //f17: A custom feature - use your imagination.
@@ -192,10 +231,10 @@ public class FeatureVector {
     return rawUrl.contains("wikipedia.org") ? 1 : 0;
   }
   
-  private double BM25Evaluation(RetrievalModel r, TermVector termVec, 
+  private double BM25Evaluation(TermVector termVec, 
           String field, int docid) throws Exception {
     double totalBM25Score = 0.0;
-    RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
+    //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
     float k_1 = model.getParameter("k_1");
     float b = model.getParameter("b");
     float k_3 = model.getParameter("k_3");
@@ -232,17 +271,38 @@ public class FeatureVector {
     return totalBM25Score;
   }
   
-  private double IndriEvaluation(RetrievalModel r, TermVector termVec, 
+  private double IndriEvaluation(TermVector termVec, 
           String field, int docid) throws Exception {
-    double totalIndriScore = 0.0;
-    RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
+    double totalIndriScore = 1.0;
+    //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
     float mu = model.getParameter("mu");
     float lambda = model.getParameter("lambda");
 
     // some constant parameters
     long collectionLength = QryEval.READER.getSumTotalTermFreq(field);
+    long docLen = QryEval.docLenStore.getDocLength(field, docid);
     
-    int ctf
-    return totalBM25Score;
+    long collectionTermFreq;
+    String stemString;
+    float maxLikeliEstim;
+    int tf;
+    for (int i = 0; i < termVec.stemsLength(); i++) {
+      stemString = termVec.stemString(i);
+      if (stemString == null || stemString == "") // null or empty string, continue to next term
+        continue;
+      collectionTermFreq = termVec.totalStemFreq(i); // ctf
+      maxLikeliEstim = (float) collectionTermFreq / collectionLength; // P_MLE
+      if (termTable.contains(stemString)) {
+        tf = termVec.stemFreq(i);
+        totalIndriScore *= Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
+                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stemString)/queryLength);
+      }
+      else {
+        totalIndriScore *= Math.pow(lambda * mu * maxLikeliEstim / (docLen + mu)
+                + (1 - lambda) * maxLikeliEstim, 1.0 / queryLength);
+      }
+    }
+    
+    return totalIndriScore;
   }
 }
