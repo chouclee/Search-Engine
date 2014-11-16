@@ -11,7 +11,9 @@ public class LearnToRank {
   private HashMap<Integer, String> queries;
   private HashMap<Integer, ArrayList<String[]>> relevance;
   private Scanner scan;
-  public LearnToRank(Map<String, String> params) {
+  private HashMap<String, Double> pageRank;
+  
+  public LearnToRank(Map<String, String> params) throws Exception {
     if (!params.containsKey("letor:trainingQueryFile")) {
       System.err.println("Error: training query file was missing.");
       System.exit(1);
@@ -19,12 +21,7 @@ public class LearnToRank {
     queriesID = new ArrayList<Integer>();
     // use a hashmap to relate query IDs and queries
     queries = new HashMap<Integer, String>();
-    try {
-      scan = new Scanner(new File(params.get("letor:trainingQueryFile")));
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    scan = new Scanner(new File(params.get("letor:trainingQueryFile")));
     String line = null;
     do {
       line = scan.nextLine();
@@ -40,12 +37,7 @@ public class LearnToRank {
       System.exit(1);
     }
     relevance = new HashMap<Integer, ArrayList<String[]>>();
-    try {
-      scan = new Scanner(new File(params.get("letor:trainingQrelsFile")));
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    scan = new Scanner(new File(params.get("letor:trainingQrelsFile")));
     ArrayList<String[]> list = null;
     int id;
     do {
@@ -68,6 +60,31 @@ public class LearnToRank {
       relevance.put(id, list);
     } while (scan.hasNext());
     scan.close();
+    
+    /*****************Retrieval Model***********************/
+    RetrievalModel r = new RetrievalModelLearnToRank();
+    if (!r.setParameter("k_1", params.get("BM25:k_1")) ||
+            !r.setParameter("b", params.get("BM25:b")) ||
+            !r.setParameter("k_3", params.get("BM25:k_3")) ||
+            !r.setParameter("mu", params.get("Indri:mu")) ||
+            !r.setParameter("lambda", params.get("Indri:lambda"))) {
+      System.err.println("paramter is missing");
+      System.exit(1);
+    }
+
+    
+    /*****************PageRank HashMap**********************/
+    pageRank = new HashMap<String, Double>();
+    scan = new Scanner(new File(params.get("letor:pageRankFile")));
+    String[] pair = null;
+    do {
+      line = scan.nextLine();
+      pair = line.split("\\s+");
+      pageRank.put(pair[0].trim(), Double.parseDouble(pair[1].trim()));
+    } while (scan.hasNext());
+    scan.close();
+    
+    generateTrainingData(r);
   }
   
   /*
@@ -84,7 +101,7 @@ public class LearnToRank {
    *    write the feature vectors to file
    * }
    */
-  public void generateTrainingData() throws Exception {
+  public void generateTrainingData(RetrievalModel r) throws Exception {
     String externalID = null;
     String query = "";
     int docID;
@@ -93,11 +110,14 @@ public class LearnToRank {
       String[] terms = QryEval.tokenizeQuery(queries.get(queryID));
       for (String term : terms)
         query = query + term + " ";
+      query = query.trim();
+      FeatureVector featureVec = new FeatureVector(r, query, pageRank);
+      
       for (String[] rel : relevance.get(queryID)) {
         externalID = rel[0];
-        docID = QryEval.getInternalDocid(externalID);
-        TermVector termVec = new TermVector(docID, "body");
+        featureVec.addDocID(r, externalID);
       }
     }
+    int a = 0;
   }
 }

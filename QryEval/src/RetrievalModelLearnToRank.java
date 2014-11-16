@@ -2,9 +2,11 @@ import java.util.HashMap;
 
 public class RetrievalModelLearnToRank extends RetrievalModel {
   private HashMap<String, Float> paramMap;
+  public int N;
   
   public RetrievalModelLearnToRank() {
     paramMap = new HashMap<String, Float>();
+    N = QryEval.READER.numDocs(); // total number of documents
   }
   @Override
   public boolean setParameter(String parameterName, double value) {

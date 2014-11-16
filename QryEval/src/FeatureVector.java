@@ -10,24 +10,65 @@ import org.apache.lucene.document.Document;
 public class FeatureVector {
   private boolean[] featureDisable;    
   private final int featureSize;
-  private Map<Integer, Double> pageRank;
+  private Map<String, Double> pageRank;
   private ArrayList<ArrayList<Double>> features;
   private ArrayList<Integer> docidList;
   private String query;
   private int queryLength;
   private Hashtable<String, Integer> termTable;
   private RetrievalModelLearnToRank model;
+  private float k_1;
+  private float b;
+  private float k_3;
+  private int N;
+  private float[] avgDocLen;
+  private float mu;
+  private float lambda;
+  private long[] collectionLength;
+
+
+
   
-  public FeatureVector(RetrievalModel r, String query, Map<Integer, Double> pageRank) {
+  public FeatureVector(RetrievalModel r, String query, 
+          Map<String, Double> pageRank) throws IOException {
     this(r, query, pageRank, "");
   }
   
-  public FeatureVector(RetrievalModel r, String query, Map<Integer, Double> pageRank,
-          String featureDisable) {
+  public FeatureVector(RetrievalModel r, String query, 
+          Map<String, Double> pageRank,
+          String featureDisable) throws IOException {
     this.model = (RetrievalModelLearnToRank)r;
     
+    // some constant parameters
+    k_1 = model.getParameter("k_1");
+    b = model.getParameter("b");
+    k_3 = model.getParameter("k_3");
+    N = QryEval.READER.numDocs(); // total number of documents
+    
+    avgDocLen = new float[4];
+    
+    avgDocLen[0] = (float) QryEval.READER.getSumTotalTermFreq("body")
+            / QryEval.READER.getDocCount("body"); // average doc length
+    avgDocLen[1] = (float) QryEval.READER.getSumTotalTermFreq("title")
+            / QryEval.READER.getDocCount("title"); // average doc length
+    avgDocLen[2] = (float) QryEval.READER.getSumTotalTermFreq("url")
+            / QryEval.READER.getDocCount("url"); // average doc length
+    avgDocLen[3] = (float) QryEval.READER.getSumTotalTermFreq("inlink")
+            / QryEval.READER.getDocCount("inlink"); // average doc length
+    
+    mu = model.getParameter("mu");
+    lambda = model.getParameter("lambda");
+    collectionLength = new long[4];
+    collectionLength[0] = QryEval.READER.getSumTotalTermFreq("body");
+    collectionLength[1] = QryEval.READER.getSumTotalTermFreq("title");
+    collectionLength[2] = QryEval.READER.getSumTotalTermFreq("url");
+    collectionLength[3] = QryEval.READER.getSumTotalTermFreq("inlink");
+    
+    
+    
+    
     this.query = query;
-    Hashtable<String, Integer> termTable = new Hashtable<String, Integer>();
+    termTable = new Hashtable<String, Integer>();
     String[] terms = query.split("\\s+");
     queryLength = terms.length;
     for (String term : terms) {
@@ -56,7 +97,8 @@ public class FeatureVector {
    
   }
   
-  public void addDocID(RetrievalModel r, int docid) throws Exception {
+  public void addDocID(RetrievalModel r, String externalID) throws Exception {
+    int docid = QryEval.getInternalDocid(externalID);
     Document d = QryEval.READER.document(docid);
     
     //f1: Spam score for d (read from index).
@@ -80,14 +122,25 @@ public class FeatureVector {
       
     //f4: PageRank score for d (read from file).
     if (!featureDisable[3]) {
-      double pageRankScore = pageRank.get(docid);
-      features.get(3).add(pageRankScore);
+      try {
+        double pageRankScore = pageRank.get(externalID);
+        features.get(3).add(pageRankScore);
+      }
+      catch (Exception e) {
+        System.err.println("ExternalID: " + externalID);
+      }
     }
     
     //---------------Body-----------------//
     TermVector termVec = null;
-    if (!!featureDisable[4] || !featureDisable[5] || !featureDisable[5])
-      termVec = new TermVector(docid, "body");
+    if (!!featureDisable[4] || !featureDisable[5] || !featureDisable[5]) {
+      try {
+        termVec = new TermVector(docid, "body");
+      }
+      catch (Exception e) {
+        termVec = null;
+      }
+    }
     /*if (termVec == null) {
       // field doesn't exist!
       System.err.println("Doc missing field: " + docid + " " + "body");
@@ -120,8 +173,14 @@ public class FeatureVector {
     }
     
     //---------------Title------------------//
-    if (!!featureDisable[7] || !featureDisable[8] || !featureDisable[9])
-      termVec = new TermVector(docid, "title");
+    if (!!featureDisable[7] || !featureDisable[8] || !featureDisable[9]) {
+      try {
+        termVec = new TermVector(docid, "title");
+      }
+      catch (Exception e) {
+        termVec = null;
+      }
+    }
     //f8: BM25 score for <q, dtitle>.
     if (!featureDisable[7]) {
       if (termVec != null) {
@@ -148,8 +207,14 @@ public class FeatureVector {
     }
     
     //---------------URL------------------//
-    if (!!featureDisable[10] || !featureDisable[11] || !featureDisable[12])
-      termVec = new TermVector(docid, "url");
+    if (!!featureDisable[10] || !featureDisable[11] || !featureDisable[12]) {
+      try {
+        termVec = new TermVector(docid, "url");
+      }
+      catch (Exception e) {
+        termVec = null;
+      }
+    }
     //f11: BM25 score for <q, durl>.
     if (!featureDisable[10]) {
       if (termVec != null) {
@@ -176,12 +241,18 @@ public class FeatureVector {
     }
     
     //-------------Inlink------------------//
-    if (!!featureDisable[13] || !featureDisable[14] || !featureDisable[15])
-      termVec = new TermVector(docid, "inlink");
+    if (!!featureDisable[13] || !featureDisable[14] || !featureDisable[15]) {
+      try {
+        termVec = new TermVector(docid, "inlink");
+      }
+      catch (Exception e) {
+        termVec = null;
+      }
+    }
     //f14: BM25 score for <q, dinlink>.
     if (!featureDisable[13]) {
       if (termVec != null) {
-        double bm25Inlink = BM25Evaluation(termVec, "inlink", docid);;
+        double bm25Inlink = BM25Evaluation(termVec, "inlink", docid);
         features.get(13).add(bm25Inlink);
       }
       else features.get(13).add(0.0);
@@ -210,9 +281,13 @@ public class FeatureVector {
   
   private double overlap(TermVector termVec, String Query) {
     int count = 0;
-    for (int i = 0; i < termVec.stems.length; i++) {
-      if (termTable.contains(termVec.stems[i]))
-        count += termTable.get(termVec.stems[i]);
+    String stemString;
+    for (int i = 1; i < termVec.stems.length; i++) {
+      stemString = termVec.stemString(i);
+      //if (stemString == null || stemString == "") // null or empty string, continue to next term
+      //  continue;
+      if (termTable.contains(stemString))
+        count += termTable.get(stemString);
     }
     return (double)count / queryLength;
   }
@@ -234,24 +309,26 @@ public class FeatureVector {
   private double BM25Evaluation(TermVector termVec, 
           String field, int docid) throws Exception {
     double totalBM25Score = 0.0;
-    //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
-    float k_1 = model.getParameter("k_1");
-    float b = model.getParameter("b");
-    float k_3 = model.getParameter("k_3");
-
-    // some constant parameters
-    int N = QryEval.READER.numDocs(); // total number of documents
-    float avgDocLen = (float) QryEval.READER.getSumTotalTermFreq(field)
-            / QryEval.READER.getDocCount(field); // average doc length
-    long docLen = QryEval.docLenStore.getDocLength(field, docid);
     
+    float avgDocLen = 0;
+    if (field.equals("body"))
+      avgDocLen = this.avgDocLen[0];
+    else if (field.equals("title"))
+      avgDocLen = this.avgDocLen[1];
+    else if (field.equals("url"))
+      avgDocLen = this.avgDocLen[2];
+    else
+      avgDocLen = this.avgDocLen[3];
+    
+    //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
+    long docLen = QryEval.docLenStore.getDocLength(field, docid);
     String stemString = null;
     int docFreq, tf;
     float RSJWeight, tfWeight, userWeight;
-    for (int i = 0; i < termVec.stemsLength(); i++) {
+    for (int i = 1; i < termVec.stemsLength(); i++) {
       stemString = termVec.stemString(i);
-      if (stemString == null || stemString == "") // null or empty string, continue to next term
-        continue;
+      //if (stemString == null || stemString == "") // null or empty string, continue to next term
+      //  continue;
       if (termTable.contains(stemString)) {
         docFreq = termVec.stemDf(i);
         
@@ -275,21 +352,28 @@ public class FeatureVector {
           String field, int docid) throws Exception {
     double totalIndriScore = 1.0;
     //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
-    float mu = model.getParameter("mu");
-    float lambda = model.getParameter("lambda");
 
+    long collectionLength;
     // some constant parameters
-    long collectionLength = QryEval.READER.getSumTotalTermFreq(field);
+    if (field.equals("body"))
+      collectionLength = this.collectionLength[0];
+    else if (field.equals("title"))
+      collectionLength = this.collectionLength[1];
+    else if (field.equals("url"))
+      collectionLength = this.collectionLength[2];
+    else
+      collectionLength = this.collectionLength[3];
+    //long collectionLength = QryEval.READER.getSumTotalTermFreq(field);
     long docLen = QryEval.docLenStore.getDocLength(field, docid);
     
     long collectionTermFreq;
     String stemString;
     float maxLikeliEstim;
     int tf;
-    for (int i = 0; i < termVec.stemsLength(); i++) {
+    for (int i = 1; i < termVec.stemsLength(); i++) {
       stemString = termVec.stemString(i);
-      if (stemString == null || stemString == "") // null or empty string, continue to next term
-        continue;
+      //if (stemString == null || stemString == "") // null or empty string, continue to next term
+      //  continue;
       collectionTermFreq = termVec.totalStemFreq(i); // ctf
       maxLikeliEstim = (float) collectionTermFreq / collectionLength; // P_MLE
       if (termTable.contains(stemString)) {
@@ -304,5 +388,13 @@ public class FeatureVector {
     }
     
     return totalIndriScore;
+  }
+  
+  private void normalize() {
+    
+  }
+  
+  private double[] findMinMax(int featureIdx) {
+   return null;  
   }
 }
