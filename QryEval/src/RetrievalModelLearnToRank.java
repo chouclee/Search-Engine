@@ -1,35 +1,18 @@
 import java.util.HashMap;
 
-
-public class RetrievalModelBMxx extends RetrievalModel {
+public class RetrievalModelLearnToRank extends RetrievalModel {
   private HashMap<String, Float> paramMap;
   
-  /**
-   * Constructor for RetrievalModelBMxx
-   */
-  public RetrievalModelBMxx() {
+  public RetrievalModelLearnToRank() {
     paramMap = new HashMap<String, Float>();
   }
-  
   @Override
-  /**
-   * Set a retrieval model parameter.
-   * @param parameterName
-   * @param parametervalue
-   * @return false (doesn't support this function)
-   */
   public boolean setParameter(String parameterName, double value) {
     // TODO Auto-generated method stub
     return false;
   }
 
   @Override
-  /**
-   * Set a retrieval model parameter.
-   * @param parameterName
-   * @param parametervalue
-   * @return true if parameter could be set
-   */
   public boolean setParameter(String parameterName, String value) {
     // TODO Auto-generated method stub
     float num = Float.parseFloat(value);
@@ -39,6 +22,10 @@ public class RetrievalModelBMxx extends RetrievalModel {
       paramMap.put("b", num);
     else if (parameterName.equalsIgnoreCase("k_3") && num >= 0)
       paramMap.put("k_3", num);
+    else if (parameterName.equalsIgnoreCase("mu") && num >= 0)
+      paramMap.put("mu", num);
+    else if (parameterName.equalsIgnoreCase("lambda") && num >=0 && num <= 1)
+      paramMap.put("lambda", num);
     else return false;
     return true;
   }

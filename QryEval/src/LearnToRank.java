@@ -86,10 +86,13 @@ public class LearnToRank {
    */
   public void generateTrainingData() throws Exception {
     String externalID = null;
+    String query = "";
     int docID;
     for (Integer queryID : queriesID) {
       // use QryEval.tokenizeQuery to stop & stem the query
-
+      String[] terms = QryEval.tokenizeQuery(queries.get(queryID));
+      for (String term : terms)
+        query = query + term + " ";
       for (String[] rel : relevance.get(queryID)) {
         externalID = rel[0];
         docID = QryEval.getInternalDocid(externalID);
