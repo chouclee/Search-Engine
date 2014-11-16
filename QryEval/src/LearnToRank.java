@@ -9,7 +9,7 @@ import java.util.Scanner;
 public class LearnToRank {
   private ArrayList<Integer> queriesID;
   private HashMap<Integer, String> queries;
-  private HashMap<Integer, String[]> relevance;
+  private HashMap<Integer, ArrayList<String[]>> relevance;
   private Scanner scan;
   public LearnToRank(Map<String, String> params) {
     if (!params.containsKey("letor:trainingQueryFile")) {
@@ -39,28 +39,62 @@ public class LearnToRank {
       System.err.println("Error: Relevance judgement file was missing.");
       System.exit(1);
     }
-    relevance = new HashMap<Integer, String[]>();
+    relevance = new HashMap<Integer, ArrayList<String[]>>();
     try {
       scan = new Scanner(new File(params.get("letor:trainingQrelsFile")));
     } catch (FileNotFoundException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
+    ArrayList<String[]> list = null;
+    int id;
     do {
+      // read each line of relevance judgment, put the result in a list
+      // update the hashmap for this query ID
       line = scan.nextLine();
       String[] pair = line.split("\\s+");
       String[] val = new String[2];
+      id = Integer.parseInt(pair[0].trim());
       val[0] = pair[2].trim(); // put external doc id
       val[1] = pair[3].trim(); // put relevance value
-      relevance.put(Integer.parseInt(pair[0].trim()), val);
+      if (!relevance.containsKey(id)) {
+        list = new ArrayList<String[]>();
+        list.add(val);
+      }
+      else {
+        list = relevance.get(id);
+        list.add(val);
+      }
+      relevance.put(id, list);
     } while (scan.hasNext());
     scan.close();
-    
   }
   
-  public void generateTrainingData() {
+  /*
+   *  while a training query q is available {
+   *    use QryEval.tokenizeQuery to stop & stem the query
+   *    foreach document d in the relevance judgements for training query q {
+   *      create an empty feature vector
+   *      read the PageRank feature from a file
+   *      fetch the term vector for d
+   *      calculate other features for <q, d>
+   *    }
+   *
+   *    normalize the feature values for query q to [0..1] 
+   *    write the feature vectors to file
+   * }
+   */
+  public void generateTrainingData() throws Exception {
+    String externalID = null;
+    int docID;
     for (Integer queryID : queriesID) {
-      
+      // use QryEval.tokenizeQuery to stop & stem the query
+
+      for (String[] rel : relevance.get(queryID)) {
+        externalID = rel[0];
+        docID = QryEval.getInternalDocid(externalID);
+        TermVector termVec = new TermVector(docID, "body");
+      }
     }
   }
 }

@@ -68,7 +68,8 @@ public class QryEval {
     do {
       line = scan.nextLine();
       String[] pair = line.split("=");
-      params.put(pair[0].trim(), pair[1].trim());
+      if (pair.length == 2)
+        params.put(pair[0].trim(), pair[1].trim());
     } while (scan.hasNext());
     scan.close();
 
