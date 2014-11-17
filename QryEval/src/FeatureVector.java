@@ -22,6 +22,8 @@ public class FeatureVector {
   private float k_3;
   private float mu;
   private float lambda;
+  private ArrayList<Integer> relList;
+  private ArrayList<String> externalIDList;
 
   public FeatureVector(RetrievalModel r, String query, 
           Map<String, Double> pageRank) throws IOException {
@@ -69,12 +71,18 @@ public class FeatureVector {
     docidList = new ArrayList<Integer>();
     
     this.pageRank = pageRank;
+    
+    relList = new ArrayList<Integer>();
+    externalIDList = new ArrayList<String>();
    
   }
   
-  public void addDocID(RetrievalModel r, String externalID) throws Exception {
+  public void addDocID(RetrievalModel r, String externalID, int rel) throws Exception {
     int docid = QryEval.getInternalDocid(externalID);
     Document d = QryEval.READER.document(docid);
+    
+    relList.add(rel);
+    externalIDList.add(externalID);
     
     //f1: Spam score for d (read from index).
     if (!featureDisable[0]) {
@@ -102,6 +110,7 @@ public class FeatureVector {
         features.get(3).add(pageRankScore);
       }
       catch (Exception e) {
+        features.get(3).add(0.0);
         System.err.println("ExternalID: " + externalID);
       }
     }
@@ -332,7 +341,13 @@ public class FeatureVector {
       stemString = termVec.stemString(i);
       //if (stemString == null || stemString == "") // null or empty string, continue to next term
       //  continue;
-      collectionTermFreq = termVec.totalStemFreq(i); // ctf
+      if (!model.ctfMap.containsKey(stemString)) {
+        collectionTermFreq = termVec.totalStemFreq(i); // ctf
+        model.ctfMap.put(stemString, collectionTermFreq);
+      }
+      else {
+        collectionTermFreq = model.ctfMap.get(stemString);
+      }
       maxLikeliEstim = (float) collectionTermFreq / collectionLength; // P_MLE
       if (termTable.contains(stemString)) {
         tf = termVec.stemFreq(i);
@@ -349,10 +364,42 @@ public class FeatureVector {
   }
   
   private void normalize() {
-    
+    for (int i = 0; i < featureSize; i++) {
+      if (!featureDisable[i]) 
+        normalize(i);
+    }
   }
   
-  private double[] findMinMax(int featureIdx) {
-   return null;  
+  private void normalize(int featureIdx) {
+    ArrayList<Double> feature = features.get(featureIdx);
+    double min = Double.MAX_VALUE;
+    double max = Double.MIN_VALUE;
+    for (int i = 0; i < feature.size(); i++) {
+      if (feature.get(i) > max)
+        max = feature.get(i);
+      else if (feature.get(i) < min)
+        min = feature.get(i);
+    }
+    if (max == 0 && min == 0) {
+      return;
+    }
+    if (max == min) {
+      for (int i = 0; i < feature.size(); i++) {
+        feature.set(i, 0.0);
+      }
+      return;
+    }
+    for (int i = 0; i < feature.size(); i++) {
+      feature.set(i, feature.get(i) - min / (max - min));
+    } 
   }
+  
+  /*public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < externalIDList.size(); i++) {
+      sb.append(relList.get(i));
+      sb.append(" ");
+      sb.append("qid:");
+    }
+  }*/
 }

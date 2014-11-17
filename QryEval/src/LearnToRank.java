@@ -115,7 +115,7 @@ public class LearnToRank {
       
       for (String[] rel : relevance.get(queryID)) {
         externalID = rel[0];
-        featureVec.addDocID(r, externalID);
+        featureVec.addDocID(r, externalID, Integer.parseInt(rel[1]));
       }
     }
     int a = 0;
