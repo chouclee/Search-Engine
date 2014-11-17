@@ -20,15 +20,9 @@ public class FeatureVector {
   private float k_1;
   private float b;
   private float k_3;
-  private int N;
-  private float[] avgDocLen;
   private float mu;
   private float lambda;
-  private long[] collectionLength;
 
-
-
-  
   public FeatureVector(RetrievalModel r, String query, 
           Map<String, Double> pageRank) throws IOException {
     this(r, query, pageRank, "");
@@ -43,27 +37,8 @@ public class FeatureVector {
     k_1 = model.getParameter("k_1");
     b = model.getParameter("b");
     k_3 = model.getParameter("k_3");
-    N = QryEval.READER.numDocs(); // total number of documents
-    
-    avgDocLen = new float[4];
-    
-    avgDocLen[0] = (float) QryEval.READER.getSumTotalTermFreq("body")
-            / QryEval.READER.getDocCount("body"); // average doc length
-    avgDocLen[1] = (float) QryEval.READER.getSumTotalTermFreq("title")
-            / QryEval.READER.getDocCount("title"); // average doc length
-    avgDocLen[2] = (float) QryEval.READER.getSumTotalTermFreq("url")
-            / QryEval.READER.getDocCount("url"); // average doc length
-    avgDocLen[3] = (float) QryEval.READER.getSumTotalTermFreq("inlink")
-            / QryEval.READER.getDocCount("inlink"); // average doc length
-    
     mu = model.getParameter("mu");
     lambda = model.getParameter("lambda");
-    collectionLength = new long[4];
-    collectionLength[0] = QryEval.READER.getSumTotalTermFreq("body");
-    collectionLength[1] = QryEval.READER.getSumTotalTermFreq("title");
-    collectionLength[2] = QryEval.READER.getSumTotalTermFreq("url");
-    collectionLength[3] = QryEval.READER.getSumTotalTermFreq("inlink");
-    
     
     
     
@@ -310,15 +285,7 @@ public class FeatureVector {
           String field, int docid) throws Exception {
     double totalBM25Score = 0.0;
     
-    float avgDocLen = 0;
-    if (field.equals("body"))
-      avgDocLen = this.avgDocLen[0];
-    else if (field.equals("title"))
-      avgDocLen = this.avgDocLen[1];
-    else if (field.equals("url"))
-      avgDocLen = this.avgDocLen[2];
-    else
-      avgDocLen = this.avgDocLen[3];
+    float avgDocLen = this.model.avgDocLenMap.get(field);
     
     //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
     long docLen = QryEval.docLenStore.getDocLength(field, docid);
@@ -333,7 +300,7 @@ public class FeatureVector {
         docFreq = termVec.stemDf(i);
         
         // RSJ weight
-        RSJWeight = (float) Math.log((N - docFreq + 0.5) / (docFreq + 0.5));
+        RSJWeight = (float) Math.log((this.model.N - docFreq + 0.5) / (docFreq + 0.5));
         
         tf = termVec.stemFreq(i);
         // tf Weight
@@ -353,16 +320,7 @@ public class FeatureVector {
     double totalIndriScore = 1.0;
     //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
 
-    long collectionLength;
-    // some constant parameters
-    if (field.equals("body"))
-      collectionLength = this.collectionLength[0];
-    else if (field.equals("title"))
-      collectionLength = this.collectionLength[1];
-    else if (field.equals("url"))
-      collectionLength = this.collectionLength[2];
-    else
-      collectionLength = this.collectionLength[3];
+    long collectionLength = this.model.collectionLengthMap.get(field);
     //long collectionLength = QryEval.READER.getSumTotalTermFreq(field);
     long docLen = QryEval.docLenStore.getDocLength(field, docid);
     

@@ -1,12 +1,33 @@
+import java.io.IOException;
 import java.util.HashMap;
 
 public class RetrievalModelLearnToRank extends RetrievalModel {
   private HashMap<String, Float> paramMap;
   public int N;
+  public HashMap<String, Float> avgDocLenMap;
+  public HashMap<String, Long> collectionLengthMap;
   
-  public RetrievalModelLearnToRank() {
+  public RetrievalModelLearnToRank() throws IOException {
     paramMap = new HashMap<String, Float>();
     N = QryEval.READER.numDocs(); // total number of documents
+    
+    avgDocLenMap = new HashMap<String, Float>();
+    
+    avgDocLenMap.put("body", (float) QryEval.READER.getSumTotalTermFreq("body")
+            / QryEval.READER.getDocCount("body")); // average doc length
+    avgDocLenMap.put("title", (float) QryEval.READER.getSumTotalTermFreq("title")
+            / QryEval.READER.getDocCount("title")); // average doc length
+    avgDocLenMap.put("url", (float) QryEval.READER.getSumTotalTermFreq("url")
+            / QryEval.READER.getDocCount("url")); // average doc length
+    avgDocLenMap.put("inlink", (float) QryEval.READER.getSumTotalTermFreq("inlink")
+            / QryEval.READER.getDocCount("inlink")); // average doc length
+    
+    collectionLengthMap = new HashMap<String, Long>();
+    
+    collectionLengthMap.put("body", QryEval.READER.getSumTotalTermFreq("body"));
+    collectionLengthMap.put("title", QryEval.READER.getSumTotalTermFreq("title"));
+    collectionLengthMap.put("url", QryEval.READER.getSumTotalTermFreq("url"));
+    collectionLengthMap.put("inlink", QryEval.READER.getSumTotalTermFreq("inlink"));
   }
   @Override
   public boolean setParameter(String parameterName, double value) {
