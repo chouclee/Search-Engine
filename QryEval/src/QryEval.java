@@ -93,6 +93,8 @@ public class QryEval {
     /** Number of Docs in this Index*/
    // int N = READER.numDocs();
     
+    //System.out.println(getInternalDocid("clueweb09-en0000-51-21323"));
+    
     // set model
     RetrievalModel model = null;
     String algorithm = params.get("retrievalAlgorithm");

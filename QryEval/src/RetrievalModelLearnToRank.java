@@ -16,10 +16,13 @@ public class RetrievalModelLearnToRank extends RetrievalModel {
     
     avgDocLenMap.put("body", (float) QryEval.READER.getSumTotalTermFreq("body")
             / QryEval.READER.getDocCount("body")); // average doc length
+    
     avgDocLenMap.put("title", (float) QryEval.READER.getSumTotalTermFreq("title")
             / QryEval.READER.getDocCount("title")); // average doc length
+    
     avgDocLenMap.put("url", (float) QryEval.READER.getSumTotalTermFreq("url")
             / QryEval.READER.getDocCount("url")); // average doc length
+    
     avgDocLenMap.put("inlink", (float) QryEval.READER.getSumTotalTermFreq("inlink")
             / QryEval.READER.getDocCount("inlink")); // average doc length
     

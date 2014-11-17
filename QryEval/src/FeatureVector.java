@@ -14,6 +14,7 @@ public class FeatureVector {
   private ArrayList<ArrayList<Double>> features;
   private ArrayList<Integer> docidList;
   private String query;
+  private int queryID;
   private int queryLength;
   private Hashtable<String, Integer> termTable;
   private RetrievalModelLearnToRank model;
@@ -25,12 +26,12 @@ public class FeatureVector {
   private ArrayList<Integer> relList;
   private ArrayList<String> externalIDList;
 
-  public FeatureVector(RetrievalModel r, String query, 
+  public FeatureVector(RetrievalModel r, int queryID, String query, 
           Map<String, Double> pageRank) throws IOException {
-    this(r, query, pageRank, "");
+    this(r, queryID, query, pageRank, "");
   }
   
-  public FeatureVector(RetrievalModel r, String query, 
+  public FeatureVector(RetrievalModel r, int queryID, String query, 
           Map<String, Double> pageRank,
           String featureDisable) throws IOException {
     this.model = (RetrievalModelLearnToRank)r;
@@ -45,11 +46,12 @@ public class FeatureVector {
     
     
     this.query = query;
+    this.queryID = queryID;
     termTable = new Hashtable<String, Integer>();
     String[] terms = query.split("\\s+");
     queryLength = terms.length;
     for (String term : terms) {
-      if (!termTable.contains(term))
+      if (!termTable.containsKey(term))
         termTable.put(term, 1);
       else
         termTable.put(term, termTable.get(term) + 1); // in case there are duplicate terms
@@ -81,6 +83,10 @@ public class FeatureVector {
     int docid = QryEval.getInternalDocid(externalID);
     Document d = QryEval.READER.document(docid);
     
+    if (externalID.equals("clueweb09-en0000-01-21462")) {
+      System.out.println("found");
+    }
+    
     relList.add(rel);
     externalIDList.add(externalID);
     
@@ -100,6 +106,8 @@ public class FeatureVector {
     //f3: FromWikipedia score for d (1 if the rawUrl contains "wikipedia.org", otherwise 0).
     if (!featureDisable[2]) {
       double wikiScore = getWikiScore(rawUrl);
+      //if (wikiScore == 0)
+      //  System.out.println(rawUrl);
       features.get(2).add(wikiScore);
     }
       
@@ -117,7 +125,7 @@ public class FeatureVector {
     
     //---------------Body-----------------//
     TermVector termVec = null;
-    if (!!featureDisable[4] || !featureDisable[5] || !featureDisable[5]) {
+    if (!featureDisable[4] || !featureDisable[5] || !featureDisable[6]) {
       try {
         termVec = new TermVector(docid, "body");
       }
@@ -157,7 +165,7 @@ public class FeatureVector {
     }
     
     //---------------Title------------------//
-    if (!!featureDisable[7] || !featureDisable[8] || !featureDisable[9]) {
+    if (!featureDisable[7] || !featureDisable[8] || !featureDisable[9]) {
       try {
         termVec = new TermVector(docid, "title");
       }
@@ -191,7 +199,7 @@ public class FeatureVector {
     }
     
     //---------------URL------------------//
-    if (!!featureDisable[10] || !featureDisable[11] || !featureDisable[12]) {
+    if (!featureDisable[10] || !featureDisable[11] || !featureDisable[12]) {
       try {
         termVec = new TermVector(docid, "url");
       }
@@ -225,7 +233,7 @@ public class FeatureVector {
     }
     
     //-------------Inlink------------------//
-    if (!!featureDisable[13] || !featureDisable[14] || !featureDisable[15]) {
+    if (!featureDisable[13] || !featureDisable[14] || !featureDisable[15]) {
       try {
         termVec = new TermVector(docid, "inlink");
       }
@@ -259,18 +267,24 @@ public class FeatureVector {
     }
     
     //f17: A custom feature - use your imagination.
+    if (!featureDisable[16]) {
+      features.get(16).add(0.0);
+    }
     //f18: A custom feature - use your imagination.
+    if (!featureDisable[17]) {
+      features.get(17).add(0.0);
+    }
 
   }
   
   private double overlap(TermVector termVec, String Query) {
     int count = 0;
     String stemString;
-    for (int i = 1; i < termVec.stems.length; i++) {
+    for (int i = 1; i < termVec.stemsLength(); i++) {
       stemString = termVec.stemString(i);
       //if (stemString == null || stemString == "") // null or empty string, continue to next term
       //  continue;
-      if (termTable.contains(stemString))
+      if (termTable.containsKey(stemString))
         count += termTable.get(stemString);
     }
     return (double)count / queryLength;
@@ -284,16 +298,19 @@ public class FeatureVector {
   }
   
   //FromWikipedia score for d (1 if the rawUrl contains "wikipedia.org", otherwise 0).
-  private int getWikiScore(String rawUrl) {
+  private static int getWikiScore(String rawUrl) {
     if (rawUrl == null || rawUrl.length() == 0)
       return 0;
-    return rawUrl.contains("wikipedia.org") ? 1 : 0;
+    return rawUrl.toLowerCase().contains("wikipedia.org") ? 1: 0;
+    //return rawUrl.matches("(?i).*wikipedia\\.org.*") ? 1 : 0;
   }
   
   private double BM25Evaluation(TermVector termVec, 
           String field, int docid) throws Exception {
     double totalBM25Score = 0.0;
-    
+    if (docid == 263887) {
+      int a = 1;
+    }
     float avgDocLen = this.model.avgDocLenMap.get(field);
     
     //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
@@ -305,7 +322,7 @@ public class FeatureVector {
       stemString = termVec.stemString(i);
       //if (stemString == null || stemString == "") // null or empty string, continue to next term
       //  continue;
-      if (termTable.contains(stemString)) {
+      if (termTable.containsKey(stemString)) {
         docFreq = termVec.stemDf(i);
         
         // RSJ weight
@@ -349,7 +366,7 @@ public class FeatureVector {
         collectionTermFreq = model.ctfMap.get(stemString);
       }
       maxLikeliEstim = (float) collectionTermFreq / collectionLength; // P_MLE
-      if (termTable.contains(stemString)) {
+      if (termTable.containsKey(stemString)) {
         tf = termVec.stemFreq(i);
         totalIndriScore *= Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
                 + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stemString)/queryLength);
@@ -363,7 +380,7 @@ public class FeatureVector {
     return totalIndriScore;
   }
   
-  private void normalize() {
+  public void normalize() {
     for (int i = 0; i < featureSize; i++) {
       if (!featureDisable[i]) 
         normalize(i);
@@ -383,6 +400,8 @@ public class FeatureVector {
     if (max == 0 && min == 0) {
       return;
     }
+    if (max == 1 && min == 0)
+      return;
     if (max == min) {
       for (int i = 0; i < feature.size(); i++) {
         feature.set(i, 0.0);
@@ -390,16 +409,22 @@ public class FeatureVector {
       return;
     }
     for (int i = 0; i < feature.size(); i++) {
-      feature.set(i, feature.get(i) - min / (max - min));
+      feature.set(i, (feature.get(i) - min) / (max - min));
     } 
   }
   
-  /*public String toString() {
+  public String toString() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < externalIDList.size(); i++) {
-      sb.append(relList.get(i));
-      sb.append(" ");
-      sb.append("qid:");
+      sb.append(relList.get(i) + " ");
+      sb.append("qid:"+ queryID + " ");
+      for (int j = 0; j < featureSize; j++) {
+        if (!featureDisable[j]) {
+          sb.append((j+1)+":"+features.get(j).get(i)+" ");
+        }
+      }
+      sb.append("# " + externalIDList.get(i) + "\n");
     }
-  }*/
+    return sb.toString();
+  }
 }

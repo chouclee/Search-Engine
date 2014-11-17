@@ -1,5 +1,7 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,7 +86,9 @@ public class LearnToRank {
     } while (scan.hasNext());
     scan.close();
     
-    generateTrainingData(r);
+    String filePath = params.get("letor:trainingFeatureVectorsFile").trim();
+    
+    generateTrainingData(r, filePath);
   }
   
   /*
@@ -101,7 +105,7 @@ public class LearnToRank {
    *    write the feature vectors to file
    * }
    */
-  public void generateTrainingData(RetrievalModel r) throws Exception {
+  public void generateTrainingData(RetrievalModel r, String filePath) throws Exception {
     String externalID = null;
     String query = "";
     int docID;
@@ -111,13 +115,18 @@ public class LearnToRank {
       for (String term : terms)
         query = query + term + " ";
       query = query.trim();
-      FeatureVector featureVec = new FeatureVector(r, query, pageRank);
+      FeatureVector featureVec = new FeatureVector(r, queryID, query, pageRank);
       
       for (String[] rel : relevance.get(queryID)) {
         externalID = rel[0];
         featureVec.addDocID(r, externalID, Integer.parseInt(rel[1]));
       }
+      featureVec.normalize();
+      BufferedWriter writer = null;
+      File file = new File(filePath);
+      writer = new BufferedWriter(new FileWriter(file, true));
+      writer.write(featureVec.toString());
+      writer.close();
     }
-    int a = 0;
   }
 }
