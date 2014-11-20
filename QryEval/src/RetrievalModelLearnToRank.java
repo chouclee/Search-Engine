@@ -6,7 +6,7 @@ public class RetrievalModelLearnToRank extends RetrievalModel {
   public int N;
   public HashMap<String, Float> avgDocLenMap;
   public HashMap<String, Long> collectionLengthMap;
-  public HashMap<String, Long> ctfMap;
+  //public HashMap<String, Long> ctfMap;
   
   public RetrievalModelLearnToRank() throws IOException {
     paramMap = new HashMap<String, Float>();
@@ -33,7 +33,7 @@ public class RetrievalModelLearnToRank extends RetrievalModel {
     collectionLengthMap.put("url", QryEval.READER.getSumTotalTermFreq("url"));
     collectionLengthMap.put("inlink", QryEval.READER.getSumTotalTermFreq("inlink"));
     
-    ctfMap = new HashMap<String, Long>();
+    //ctfMap = new HashMap<String, Long>();
   }
   @Override
   public boolean setParameter(String parameterName, double value) {

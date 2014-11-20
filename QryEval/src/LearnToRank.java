@@ -1,6 +1,5 @@
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -108,7 +107,6 @@ public class LearnToRank {
   public void generateTrainingData(RetrievalModel r, String filePath) throws Exception {
     String externalID = null;
     String query = "";
-    int docID;
     for (Integer queryID : queriesID) {
       // use QryEval.tokenizeQuery to stop & stem the query
       String[] terms = QryEval.tokenizeQuery(queries.get(queryID));

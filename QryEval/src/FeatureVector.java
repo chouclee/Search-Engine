@@ -1,10 +1,12 @@
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.util.BytesRef;
 
 
 public class FeatureVector {
@@ -12,7 +14,7 @@ public class FeatureVector {
   private final int featureSize;
   private Map<String, Double> pageRank;
   private ArrayList<ArrayList<Double>> features;
-  private ArrayList<Integer> docidList;
+  //private ArrayList<Integer> docidList;
   private String query;
   private int queryID;
   private int queryLength;
@@ -70,7 +72,7 @@ public class FeatureVector {
         this.featureDisable[Integer.parseInt(str.trim()) - 1] = true;
     }
     
-    docidList = new ArrayList<Integer>();
+    //docidList = new ArrayList<Integer>();
     
     this.pageRank = pageRank;
     
@@ -83,6 +85,7 @@ public class FeatureVector {
     int docid = QryEval.getInternalDocid(externalID);
     Document d = QryEval.READER.document(docid);
     
+    //if (externalID.equals("clueweb09-en0000-01-21462")) {
     if (externalID.equals("clueweb09-en0000-01-21462")) {
       System.out.println("found");
     }
@@ -294,7 +297,8 @@ public class FeatureVector {
   private int getUrlDepth(String rawUrl) {
     if (rawUrl == null || rawUrl.length() == 0)
       return 0;
-    return rawUrl.split("/").length - 1;
+    String temp = rawUrl.replace("/", "");
+    return rawUrl.length() - temp.length();
   }
   
   //FromWikipedia score for d (1 if the rawUrl contains "wikipedia.org", otherwise 0).
@@ -308,16 +312,13 @@ public class FeatureVector {
   private double BM25Evaluation(TermVector termVec, 
           String field, int docid) throws Exception {
     double totalBM25Score = 0.0;
-    if (docid == 263887) {
-      int a = 1;
-    }
     float avgDocLen = this.model.avgDocLenMap.get(field);
     
     //RetrievalModelLearnToRank model = (RetrievalModelLearnToRank)r;
     long docLen = QryEval.docLenStore.getDocLength(field, docid);
     String stemString = null;
     int docFreq, tf;
-    float RSJWeight, tfWeight, userWeight;
+    double RSJWeight, tfWeight, userWeight;
     for (int i = 1; i < termVec.stemsLength(); i++) {
       stemString = termVec.stemString(i);
       //if (stemString == null || stemString == "") // null or empty string, continue to next term
@@ -326,7 +327,7 @@ public class FeatureVector {
         docFreq = termVec.stemDf(i);
         
         // RSJ weight
-        RSJWeight = (float) Math.log((this.model.N - docFreq + 0.5) / (docFreq + 0.5));
+        RSJWeight = Math.log((this.model.N - docFreq + 0.5) / (docFreq + 0.5));
         
         tf = termVec.stemFreq(i);
         // tf Weight
@@ -352,31 +353,37 @@ public class FeatureVector {
     
     long collectionTermFreq;
     String stemString;
-    float maxLikeliEstim;
+    double maxLikeliEstim;
     int tf;
+    Integer idx;
+    HashMap<String, Integer> termFindMap = new HashMap<String, Integer>();
     for (int i = 1; i < termVec.stemsLength(); i++) {
       stemString = termVec.stemString(i);
-      //if (stemString == null || stemString == "") // null or empty string, continue to next term
-      //  continue;
-      if (!model.ctfMap.containsKey(stemString)) {
-        collectionTermFreq = termVec.totalStemFreq(i); // ctf
-        model.ctfMap.put(stemString, collectionTermFreq);
-      }
-      else {
-        collectionTermFreq = model.ctfMap.get(stemString);
-      }
-      maxLikeliEstim = (float) collectionTermFreq / collectionLength; // P_MLE
-      if (termTable.containsKey(stemString)) {
-        tf = termVec.stemFreq(i);
+      if (termTable.containsKey(stemString))
+        termFindMap.put(stemString, i);
+    }
+    for (String stem : termTable.keySet()) {
+      idx = termFindMap.get(stem);
+      if (idx != null) {
+        //collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
+        collectionTermFreq = termVec.totalStemFreq(idx); // ctf
+        tf = termVec.stemFreq(idx);
+        maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
         totalIndriScore *= Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
-                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stemString)/queryLength);
+                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem)/queryLength);
+        //totalIndriScore *= lambda * (tf + mu * maxLikeliEstim)/ (docLen + mu)
+        //        + (1 - lambda) * maxLikeliEstim;
       }
       else {
+        collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
+        maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
         totalIndriScore *= Math.pow(lambda * mu * maxLikeliEstim / (docLen + mu)
                 + (1 - lambda) * maxLikeliEstim, 1.0 / queryLength);
+        //totalIndriScore *= lambda * mu * maxLikeliEstim / (docLen + mu)
+        //                + (1 - lambda) * maxLikeliEstim;
       }
     }
-    
+    //totalIndriScore = Math.pow(totalIndriScore, 1.0 / queryLength);
     return totalIndriScore;
   }
   
