@@ -1,6 +1,9 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +91,16 @@ public class LearnToRank {
     String filePath = params.get("letor:trainingFeatureVectorsFile").trim();
     
     generateTrainingData(r, filePath);
+    
+    callSVMTrain(params.get("letor:svmRankLearnPath").trim(),          
+            params.get("letor:svmRankParamC").trim(),
+            filePath,
+            params.get("letor:svmRankModelFile").trim());
+    
+    callSVMClassify(params.get("letor:svmRankClassifyPath").trim(),
+            params.get("letor:testingFeatureVectorsFile").trim(),
+            params.get("letor:svmRankModelFile").trim(),
+            params.get("letor:testingDocumentScores").trim());
   }
   
   /*
@@ -126,5 +139,48 @@ public class LearnToRank {
       writer.write(featureVec.toString());
       writer.close();
     }
+  }
+  
+  public void callSVMTrain(String execPath, String FEAT_GEN_c, String qrelsFeatureOutputFile,
+          String modelOutputFile ) throws Exception {
+    // runs svm_rank_learn from within Java to train the model
+    // execPath is the location of the svm_rank_learn utility, 
+    // which is specified by letor:svmRankLearnPath in the parameter file.
+    // FEAT_GEN.c is the value of the letor:c parameter.
+    callCmd(new String[] { execPath, "-c", FEAT_GEN_c, qrelsFeatureOutputFile,
+                modelOutputFile });
+  }
+  
+  public void callSVMClassify(String execPath, String testData, String modelFile,
+          String predictions) throws Exception {
+    callCmd(new String[] {execPath, testData, modelFile, predictions});
+  }
+  
+  private void callCmd(String[] args) throws Exception {
+    Process cmdProc = Runtime.getRuntime().exec(args);
+
+        // The stdout/stderr consuming code MUST be included.
+        // It prevents the OS from running out of output buffer space and stalling.
+
+        // consume stdout and print it out for debugging purposes
+        BufferedReader stdoutReader = new BufferedReader(
+            new InputStreamReader(cmdProc.getInputStream()));
+        String line;
+        while ((line = stdoutReader.readLine()) != null) {
+          System.out.println(line);
+        }
+        // consume stderr and print it for debugging purposes
+        BufferedReader stderrReader = new BufferedReader(
+            new InputStreamReader(cmdProc.getErrorStream()));
+        while ((line = stderrReader.readLine()) != null) {
+          System.out.println(line);
+        }
+
+        // get the return value from the executable. 0 means success, non-zero 
+        // indicates a problem
+        int retValue = cmdProc.waitFor();
+        if (retValue != 0) {
+          throw new Exception("SVM Rank crashed.");
+        }
   }
 }
