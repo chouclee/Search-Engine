@@ -16,6 +16,7 @@ public class LearnToRank {
   private HashMap<Integer, ArrayList<String[]>> relevance;
   private Scanner scan;
   private HashMap<String, Double> pageRank;
+  private String disableFeature;
   
   public LearnToRank(Map<String, String> params) throws Exception {
     if (!params.containsKey("letor:trainingQueryFile")) {
@@ -88,6 +89,10 @@ public class LearnToRank {
     } while (scan.hasNext());
     scan.close();
     
+    /*****************letor:featureDisable*****************/
+    if (params.containsKey("letor:featureDisable"))
+      disableFeature = params.get("letor:featureDisable").trim();
+    
     String filePath = params.get("letor:trainingFeatureVectorsFile").trim();
     
     generateTrainingData(r, filePath);
@@ -117,7 +122,8 @@ public class LearnToRank {
    *    write the feature vectors to file
    * }
    */
-  public void generateTrainingData(RetrievalModel r, String filePath) throws Exception {
+  public void generateTrainingData(RetrievalModel r, 
+          String filePath) throws Exception {
     String externalID = null;
     String query = "";
     for (Integer queryID : queriesID) {
@@ -126,7 +132,8 @@ public class LearnToRank {
       for (String term : terms)
         query = query + term + " ";
       query = query.trim();
-      FeatureVector featureVec = new FeatureVector(r, queryID, query, pageRank);
+      FeatureVector featureVec = new FeatureVector(r, queryID, query, 
+              pageRank, this.disableFeature);
       
       for (String[] rel : relevance.get(queryID)) {
         externalID = rel[0];
@@ -141,19 +148,27 @@ public class LearnToRank {
     }
   }
   
-  public void callSVMTrain(String execPath, String FEAT_GEN_c, String qrelsFeatureOutputFile,
+  public void callSVMTrain(String execPath, String FEAT_GEN_c, 
+          String qrelsFeatureOutputFile,
           String modelOutputFile ) throws Exception {
     // runs svm_rank_learn from within Java to train the model
     // execPath is the location of the svm_rank_learn utility, 
     // which is specified by letor:svmRankLearnPath in the parameter file.
     // FEAT_GEN.c is the value of the letor:c parameter.
-    callCmd(new String[] { execPath, "-c", FEAT_GEN_c, qrelsFeatureOutputFile,
+    callCmd(new String[] { execPath, "-c", FEAT_GEN_c, 
+            qrelsFeatureOutputFile,
                 modelOutputFile });
   }
   
-  public void callSVMClassify(String execPath, String testData, String modelFile,
-          String predictions) throws Exception {
+  public void callSVMClassify(String execPath, String testData, 
+          String modelFile, String predictions) throws Exception {
     callCmd(new String[] {execPath, testData, modelFile, predictions});
+  }
+  
+  
+  public void evaluate(QryResult initialRanking, int topN) {
+    ScoreList.ScoreListEntry[] topRank = QryEval.getTopNDocuments(initialRanking, topN);
+    
   }
   
   private void callCmd(String[] args) throws Exception {

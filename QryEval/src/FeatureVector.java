@@ -67,7 +67,7 @@ public class FeatureVector {
       features.add(new ArrayList<Double>());
     }
     if (featureDisable !=null && !featureDisable.equals("")) {
-      String[] disabled = featureDisable.split("\\s+");
+      String[] disabled = featureDisable.split(",");
       for (String str : disabled)
         this.featureDisable[Integer.parseInt(str.trim()) - 1] = true;
     }
@@ -85,8 +85,8 @@ public class FeatureVector {
     int docid = QryEval.getInternalDocid(externalID);
     Document d = QryEval.READER.document(docid);
     
-    //if (externalID.equals("clueweb09-en0000-01-21462")) {
-    if (externalID.equals("clueweb09-en0000-01-21462")) {
+    if (externalID.equals("clueweb09-en0009-28-27170")) {
+    //if (externalID.equals("clueweb09-en0009-15-36339")) {
       System.out.println("found");
     }
     
@@ -109,8 +109,6 @@ public class FeatureVector {
     //f3: FromWikipedia score for d (1 if the rawUrl contains "wikipedia.org", otherwise 0).
     if (!featureDisable[2]) {
       double wikiScore = getWikiScore(rawUrl);
-      //if (wikiScore == 0)
-      //  System.out.println(rawUrl);
       features.get(2).add(wikiScore);
     }
       
@@ -121,8 +119,8 @@ public class FeatureVector {
         features.get(3).add(pageRankScore);
       }
       catch (Exception e) {
-        features.get(3).add(0.0);
-        System.err.println("ExternalID: " + externalID);
+        features.get(3).add(Double.NaN);
+        //System.err.println("ExternalID: " + externalID);
       }
     }
     
@@ -136,18 +134,14 @@ public class FeatureVector {
         termVec = null;
       }
     }
-    /*if (termVec == null) {
-      // field doesn't exist!
-      System.err.println("Doc missing field: " + docid + " " + "body");
-      System.exit(1);
-    }*/
+    
     //f5: BM25 score for <q, dbody>.
     if (!featureDisable[4]) {
       if (termVec != null) {
         double bm25Body = BM25Evaluation(termVec, "body", docid);
         features.get(4).add(bm25Body);
       }
-      else features.get(4).add(0.0);
+      else features.get(4).add(Double.NaN);
     }
     //f6: Indri score for <q, dbody>.
     if (!featureDisable[5]) {
@@ -155,7 +149,7 @@ public class FeatureVector {
         double indriBody = IndriEvaluation(termVec, "body", docid);
         features.get(5).add(indriBody);
       }
-      else features.get(5).add(0.0);
+      else features.get(5).add(Double.NaN);
     }
     
     //f7: Term overlap score for <q, dbody>.
@@ -164,7 +158,7 @@ public class FeatureVector {
         double overlapBody = overlap(termVec, query);
         features.get(6).add(overlapBody);
       }
-      else features.get(6).add(0.0);
+      else features.get(6).add(Double.NaN);
     }
     
     //---------------Title------------------//
@@ -182,7 +176,7 @@ public class FeatureVector {
         double bm25Title = BM25Evaluation(termVec, "title", docid);
         features.get(7).add(bm25Title);
       }
-      else features.get(7).add(0.0);
+      else features.get(7).add(Double.NaN);
     }
     //f9: Indri score for <q, dtitle>.
     if (!featureDisable[8]) {
@@ -190,7 +184,7 @@ public class FeatureVector {
         double indriTitle = IndriEvaluation(termVec, "title", docid);
         features.get(8).add(indriTitle);
       }
-      else features.get(8).add(0.0);
+      else features.get(8).add(Double.NaN);
     }
     //f10: Term overlap score for <q, dtitle>.
     if (!featureDisable[9]) {
@@ -198,7 +192,7 @@ public class FeatureVector {
         double overlapTitle = overlap(termVec, query);
         features.get(9).add(overlapTitle);
       }
-      else features.get(9).add(0.0);
+      else features.get(9).add(Double.NaN);
     }
     
     //---------------URL------------------//
@@ -216,7 +210,7 @@ public class FeatureVector {
         double bm25Url = BM25Evaluation(termVec, "url", docid);
         features.get(10).add(bm25Url);
       }
-      else features.get(10).add(0.0);
+      else features.get(10).add(Double.NaN);
     }
     //f12: Indri score for <q, durl>.
     if (!featureDisable[11]) {
@@ -224,7 +218,7 @@ public class FeatureVector {
         double indriUrl = IndriEvaluation(termVec, "url", docid);
         features.get(11).add(indriUrl);
       }
-      else features.get(11).add(0.0);
+      else features.get(11).add(Double.NaN);
     }
     //f13: Term overlap score for <q, durl>.
     if (!featureDisable[12]) {
@@ -232,7 +226,7 @@ public class FeatureVector {
         double overlapUrl = overlap(termVec, query);
         features.get(12).add(overlapUrl);
       }
-      else features.get(12).add(0.0);
+      else features.get(12).add(Double.NaN);
     }
     
     //-------------Inlink------------------//
@@ -250,7 +244,7 @@ public class FeatureVector {
         double bm25Inlink = BM25Evaluation(termVec, "inlink", docid);
         features.get(13).add(bm25Inlink);
       }
-      else features.get(13).add(0.0);
+      else features.get(13).add(Double.NaN);
     }
     //f15: Indri score for <q, dinlink>.
     if (!featureDisable[14]) {
@@ -258,7 +252,7 @@ public class FeatureVector {
         double indriInlink = IndriEvaluation(termVec, "inlink", docid);
         features.get(14).add(indriInlink);
       }
-      else features.get(14).add(0.0);
+      else features.get(14).add(Double.NaN);
     }
     //f16: Term overlap score for <q, dinlink>.
     if (!featureDisable[15]) {
@@ -266,16 +260,16 @@ public class FeatureVector {
         double overlapInlink = overlap(termVec, query);
         features.get(15).add(overlapInlink);
       }
-      else features.get(15).add(0.0);
+      else features.get(15).add(Double.NaN);
     }
     
     //f17: A custom feature - use your imagination.
     if (!featureDisable[16]) {
-      features.get(16).add(0.0);
+      features.get(16).add(Double.NaN);
     }
     //f18: A custom feature - use your imagination.
     if (!featureDisable[17]) {
-      features.get(17).add(0.0);
+      features.get(17).add(Double.NaN);
     }
 
   }
@@ -369,21 +363,23 @@ public class FeatureVector {
         collectionTermFreq = termVec.totalStemFreq(idx); // ctf
         tf = termVec.stemFreq(idx);
         maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
-        totalIndriScore *= Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
-                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem)/queryLength);
+        totalIndriScore *= (Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
+                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem)/queryLength));
         //totalIndriScore *= lambda * (tf + mu * maxLikeliEstim)/ (docLen + mu)
         //        + (1 - lambda) * maxLikeliEstim;
       }
-      else {
+    /*  else {
         collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
         maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
-        totalIndriScore *= Math.pow(lambda * mu * maxLikeliEstim / (docLen + mu)
-                + (1 - lambda) * maxLikeliEstim, 1.0 / queryLength);
+        totalIndriScore *= (Math.pow(lambda * mu * maxLikeliEstim / (docLen + mu)
+                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem) / queryLength));
         //totalIndriScore *= lambda * mu * maxLikeliEstim / (docLen + mu)
         //                + (1 - lambda) * maxLikeliEstim;
-      }
+      }*/
     }
     //totalIndriScore = Math.pow(totalIndriScore, 1.0 / queryLength);
+    if (totalIndriScore == 1.0)
+      totalIndriScore = Double.NaN;
     return totalIndriScore;
   }
   
@@ -398,17 +394,23 @@ public class FeatureVector {
     ArrayList<Double> feature = features.get(featureIdx);
     double min = Double.MAX_VALUE;
     double max = Double.MIN_VALUE;
+    double f;
     for (int i = 0; i < feature.size(); i++) {
-      if (feature.get(i) > max)
-        max = feature.get(i);
-      else if (feature.get(i) < min)
-        min = feature.get(i);
+      f = feature.get(i);
+      if (!Double.isNaN(f)) {
+        if (f > max)
+          max = f;
+        else if (f < min)
+          min = f;
+      }
     }
-    if (max == 0 && min == 0) {
+    if ((max == 0 && min == 0) || (max == 1 && min == 0)) {
+      for (int i = 0; i < feature.size(); i++) {
+        if (Double.isNaN(feature.get(i)))
+          feature.set(i, 0.0);
+      }
       return;
     }
-    if (max == 1 && min == 0)
-      return;
     if (max == min) {
       for (int i = 0; i < feature.size(); i++) {
         feature.set(i, 0.0);
@@ -416,7 +418,11 @@ public class FeatureVector {
       return;
     }
     for (int i = 0; i < feature.size(); i++) {
-      feature.set(i, (feature.get(i) - min) / (max - min));
+      f = feature.get(i);
+      if (Double.isNaN(f))
+        feature.set(i, 0.0);
+      else
+        feature.set(i, (f - min) / (max - min));
     } 
   }
   

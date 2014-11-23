@@ -45,6 +45,10 @@ public class QryEval {
   }
   
   static DocLengthStore docLenStore;
+  
+  public static ArrayList<Integer> queriesID = new ArrayList<Integer>();
+  // use a hashmap to relate query IDs and queries
+  public static HashMap<Integer, String> queries = new HashMap<Integer, String>();
 
   /**
    * @param args
@@ -97,6 +101,7 @@ public class QryEval {
     
     // set model
     RetrievalModel model = null;
+    LearnToRank letor = null;
     String algorithm = params.get("retrievalAlgorithm");
     if (algorithm.equalsIgnoreCase("UnrankedBoolean")) {
       model = new RetrievalModelUnrankedBoolean();
@@ -118,7 +123,8 @@ public class QryEval {
         System.exit(1);
       } 
     } else if (algorithm.equalsIgnoreCase("letor")) {
-      LearnToRank letor = new LearnToRank(params);
+      letor = new LearnToRank(params);
+      model = new RetrievalModelBMxx();
       //model = new RetrievalModelLetor();
     }
     else {
@@ -126,23 +132,11 @@ public class QryEval {
       System.exit(1);
     }
 
-    // load all queries
     if (!params.containsKey("queryFilePath")) {
       System.err.println("Error: Parameters were missing.");
       System.exit(1);
     }
-    ArrayList<Integer> queriesID = new ArrayList<Integer>();
-    // use a hashmap to relate query IDs and queries
-    HashMap<Integer, String> queries = new HashMap<Integer, String>();
-    scan = new Scanner(new File(params.get("queryFilePath")));
-    line = null;
-    do {
-      line = scan.nextLine();
-      String[] pair = line.split(":");
-      queriesID.add(Integer.parseInt(pair[0].trim()));
-      queries.put(Integer.parseInt(pair[0].trim()), pair[1].trim());
-    } while (scan.hasNext());
-    scan.close();
+    loadAllQueries(params.get("queryFilePath"));
 
     // evaluate retrieval algorithm
     for (Integer queryID : queriesID) {
@@ -187,6 +181,12 @@ public class QryEval {
       System.out.println(queryID + "\t" + queries.get(queryID));
       System.out.println("Parsed Query: " + operation.toString());
       // printResults(queryID, operation.evaluate(model));
+      
+      /****************************Learn To Rank*******************************/
+      if (letor != null) {
+        letor.evaluate(operation.evaluate(model), 100);
+      }
+      
       writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
 
@@ -285,6 +285,19 @@ public class QryEval {
     } else {
       return hits[0].doc;
     }
+  }
+  
+  static void loadAllQueries(String queryFilePath) throws Exception {
+    // load all queries
+    Scanner scan = new Scanner(new File(queryFilePath));
+    String line = null;
+    do {
+      line = scan.nextLine();
+      String[] pair = line.split(":");
+      queriesID.add(Integer.parseInt(pair[0].trim()));
+      queries.put(Integer.parseInt(pair[0].trim()), pair[1].trim());
+    } while (scan.hasNext());
+    scan.close();
   }
   
   
