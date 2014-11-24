@@ -356,30 +356,40 @@ public class FeatureVector {
       if (termTable.containsKey(stemString))
         termFindMap.put(stemString, i);
     }
+    boolean hasOverlap = false;
     for (String stem : termTable.keySet()) {
       idx = termFindMap.get(stem);
       if (idx != null) {
-        //collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
-        collectionTermFreq = termVec.totalStemFreq(idx); // ctf
-        tf = termVec.stemFreq(idx);
-        maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
-        totalIndriScore *= (Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
-                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem)/queryLength));
-        //totalIndriScore *= lambda * (tf + mu * maxLikeliEstim)/ (docLen + mu)
-        //        + (1 - lambda) * maxLikeliEstim;
+        hasOverlap = true;
       }
-    /*  else {
-        collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
-        maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
-        totalIndriScore *= (Math.pow(lambda * mu * maxLikeliEstim / (docLen + mu)
-                + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem) / queryLength));
-        //totalIndriScore *= lambda * mu * maxLikeliEstim / (docLen + mu)
-        //                + (1 - lambda) * maxLikeliEstim;
-      }*/
+      if (hasOverlap)
+        break; 
     }
-    //totalIndriScore = Math.pow(totalIndriScore, 1.0 / queryLength);
-    if (totalIndriScore == 1.0)
-      totalIndriScore = Double.NaN;
+    
+    if (hasOverlap) {
+      for (String stem : termTable.keySet()) {
+        idx = termFindMap.get(stem);
+        if (idx != null) {
+          //collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
+          collectionTermFreq = termVec.totalStemFreq(idx); // ctf
+          tf = termVec.stemFreq(idx);
+          maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
+          totalIndriScore *= (Math.pow(lambda * (tf + mu * maxLikeliEstim) / (docLen + mu)
+                  + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem)/queryLength));
+          //totalIndriScore *= lambda * (tf + mu * maxLikeliEstim)/ (docLen + mu)
+          //        + (1 - lambda) * maxLikeliEstim;
+        } else {
+          collectionTermFreq = QryEval.READER.totalTermFreq (new Term (field, new BytesRef(stem)));
+          maxLikeliEstim = (double) collectionTermFreq / collectionLength; // P_MLE
+          totalIndriScore *= (Math.pow(lambda * mu * maxLikeliEstim / (docLen + mu)
+                  + (1 - lambda) * maxLikeliEstim, (double)termTable.get(stem) / queryLength));
+          //totalIndriScore *= lambda * mu * maxLikeliEstim / (docLen + mu)
+          //                + (1 - lambda) * maxLikeliEstim;
+        }
+      }
+    }
+    else
+      totalIndriScore = 0.0;
     return totalIndriScore;
   }
   

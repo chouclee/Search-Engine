@@ -17,6 +17,7 @@ public class LearnToRank {
   private Scanner scan;
   private HashMap<String, Double> pageRank;
   private String disableFeature;
+  private RetrievalModelLearnToRank r;
   
   public LearnToRank(Map<String, String> params) throws Exception {
     if (!params.containsKey("letor:trainingQueryFile")) {
@@ -67,7 +68,7 @@ public class LearnToRank {
     scan.close();
     
     /*****************Retrieval Model***********************/
-    RetrievalModel r = new RetrievalModelLearnToRank();
+    r = new RetrievalModelLearnToRank();
     if (!r.setParameter("k_1", params.get("BM25:k_1")) ||
             !r.setParameter("b", params.get("BM25:b")) ||
             !r.setParameter("k_3", params.get("BM25:k_3")) ||
@@ -93,7 +94,7 @@ public class LearnToRank {
     if (params.containsKey("letor:featureDisable"))
       disableFeature = params.get("letor:featureDisable").trim();
     
-    String filePath = params.get("letor:trainingFeatureVectorsFile").trim();
+    String filePath = params.get("letor:trainingFeatureVectorsFile").trim(); 
     
     generateTrainingData(r, filePath);
     
@@ -101,11 +102,6 @@ public class LearnToRank {
             params.get("letor:svmRankParamC").trim(),
             filePath,
             params.get("letor:svmRankModelFile").trim());
-    
-    callSVMClassify(params.get("letor:svmRankClassifyPath").trim(),
-            params.get("letor:testingFeatureVectorsFile").trim(),
-            params.get("letor:svmRankModelFile").trim(),
-            params.get("letor:testingDocumentScores").trim());
   }
   
   /*
@@ -122,7 +118,7 @@ public class LearnToRank {
    *    write the feature vectors to file
    * }
    */
-  public void generateTrainingData(RetrievalModel r, 
+  public void generateTrainingData(RetrievalModelLearnToRank r, 
           String filePath) throws Exception {
     String externalID = null;
     String query = "";
@@ -142,7 +138,7 @@ public class LearnToRank {
       featureVec.normalize();
       BufferedWriter writer = null;
       File file = new File(filePath);
-      writer = new BufferedWriter(new FileWriter(file, true));
+      writer = new BufferedWriter(new FileWriter(file, false));
       writer.write(featureVec.toString());
       writer.close();
     }
@@ -155,9 +151,8 @@ public class LearnToRank {
     // execPath is the location of the svm_rank_learn utility, 
     // which is specified by letor:svmRankLearnPath in the parameter file.
     // FEAT_GEN.c is the value of the letor:c parameter.
-    callCmd(new String[] { execPath, "-c", FEAT_GEN_c, 
-            qrelsFeatureOutputFile,
-                modelOutputFile });
+    callCmd(new String[] {execPath, "-c", FEAT_GEN_c, 
+            qrelsFeatureOutputFile, modelOutputFile });
   }
   
   public void callSVMClassify(String execPath, String testData, 
@@ -165,10 +160,40 @@ public class LearnToRank {
     callCmd(new String[] {execPath, testData, modelFile, predictions});
   }
   
+  public void classify(Map<String, String> params) throws Exception {
+    callSVMClassify(params.get("letor:svmRankClassifyPath").trim(),
+            params.get("letor:testingFeatureVectorsFile").trim(),
+            params.get("letor:svmRankModelFile").trim(),
+            params.get("letor:testingDocumentScores").trim());
+  }
   
-  public void evaluate(QryResult initialRanking, int topN) {
+  
+  public void evaluate(QryResult initialRanking, int topN, 
+          Map<String, String> params, int queryID) throws Exception {
     ScoreList.ScoreListEntry[] topRank = QryEval.getTopNDocuments(initialRanking, topN);
     
+    String externalID = null;
+    String query = "";
+    // use QryEval.tokenizeQuery to stop & stem the query
+    String[] terms = QryEval.tokenizeQuery(QryEval.queries.get(queryID));
+    for (String term : terms)
+      query = query + term + " ";
+    query = query.trim();
+    FeatureVector featureVec = new FeatureVector(r, queryID, query, 
+            pageRank, this.disableFeature);
+    
+    for (ScoreList.ScoreListEntry entry : topRank) {
+      externalID = entry.getExtDocID();
+      if (externalID == null)
+        externalID = QryEval.getExternalDocid(entry.getDocid());
+      featureVec.addDocID(r, externalID, 0);
+    }
+    featureVec.normalize();
+    BufferedWriter writer = null;
+    File file = new File(params.get("letor:testingFeatureVectorsFile").trim());
+    writer = new BufferedWriter(new FileWriter(file, true));
+    writer.write(featureVec.toString());
+    writer.close();   
   }
   
   private void callCmd(String[] args) throws Exception {

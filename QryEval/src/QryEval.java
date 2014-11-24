@@ -125,6 +125,12 @@ public class QryEval {
     } else if (algorithm.equalsIgnoreCase("letor")) {
       letor = new LearnToRank(params);
       model = new RetrievalModelBMxx();
+      if (!model.setParameter("k_1", params.get("BM25:k_1")) ||
+              !model.setParameter("b", params.get("BM25:b")) ||
+              !model.setParameter("k_3", params.get("BM25:k_3"))) {
+        System.err.println(usage);
+        System.exit(1);
+      }
       //model = new RetrievalModelLetor();
     }
     else {
@@ -184,10 +190,11 @@ public class QryEval {
       
       /****************************Learn To Rank*******************************/
       if (letor != null) {
-        letor.evaluate(operation.evaluate(model), 100);
+        letor.evaluate(operation.evaluate(model), 100, params, queryID);
+        letor.classify(params);
       }
-      
-      writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
+      else 
+        writeTrecEvalFile(params.get("trecEvalOutputPath"), queryID, operation.evaluate(model));
     }
 
     printMemoryUsage(false);
