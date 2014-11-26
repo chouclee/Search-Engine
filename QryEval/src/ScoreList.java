@@ -39,6 +39,10 @@ public class ScoreList {
       return this.extDocID;
     }
     
+    public void setExtDocID(String extDocId) {
+      this.extDocID = extDocId;
+    }
+    
     private void initialExtDocID() {
       try {
        this.extDocID = QryEval.getExternalDocid(this.docid);
@@ -80,6 +84,12 @@ public class ScoreList {
   public static class ScoreOrder implements Comparator<ScoreListEntry> {
     public int compare(ScoreListEntry a, ScoreListEntry b) {
       return a.compareTo(b);
+    }
+  }
+  
+  public static class ReverseScoreOrder implements Comparator<ScoreListEntry> {
+    public int compare(ScoreListEntry a, ScoreListEntry b) {
+      return b.compareTo(a);
     }
   }
   @Deprecated

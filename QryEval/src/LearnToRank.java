@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -138,7 +137,7 @@ public class LearnToRank {
       featureVec.normalize();
       BufferedWriter writer = null;
       File file = new File(filePath);
-      writer = new BufferedWriter(new FileWriter(file, false));
+      writer = new BufferedWriter(new FileWriter(file, true));
       writer.write(featureVec.toString());
       writer.close();
     }
@@ -168,10 +167,10 @@ public class LearnToRank {
   }
   
   
-  public void evaluate(QryResult initialRanking, int topN, 
-          Map<String, String> params, int queryID) throws Exception {
-    ScoreList.ScoreListEntry[] topRank = QryEval.getTopNDocuments(initialRanking, topN);
-    
+ // public void evaluate(QryResult initialRanking, int topN, 
+ //         Map<String, String> params, int queryID) throws Exception {
+  public void evaluate(ScoreList.ScoreListEntry[] topRank,
+          Map<String, String> params, int queryID) throws Exception {  
     String externalID = null;
     String query = "";
     // use QryEval.tokenizeQuery to stop & stem the query
@@ -184,8 +183,10 @@ public class LearnToRank {
     
     for (ScoreList.ScoreListEntry entry : topRank) {
       externalID = entry.getExtDocID();
-      if (externalID == null)
+      if (externalID == null) {
         externalID = QryEval.getExternalDocid(entry.getDocid());
+        entry.setExtDocID(externalID);
+      }
       featureVec.addDocID(r, externalID, 0);
     }
     featureVec.normalize();
