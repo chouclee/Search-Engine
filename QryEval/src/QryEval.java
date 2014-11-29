@@ -225,7 +225,7 @@ public class QryEval {
       }
     }
 
-    printMemoryUsage(false);
+    printMemoryUsage(true);
     long endTime = System.currentTimeMillis();
     System.out.println("Total running time: " + (endTime - startTime)/1000 + "s.");
 
