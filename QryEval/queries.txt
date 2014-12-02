@@ -1,5 +1,26 @@
-1:obama #SYN (parents relatives #NEAR/3(family tree))
-2:#NEAR/1(french lick) resort and casino
-6:kcs
-7:#NEAR/3(air travel) information
-15:espn sports 
+1:#WAND( 0.7 #AND( obama family tree ) 0.2 #AND( #NEAR/1( family tree )  #NEAR/1( obama family ) ) 0.1 #AND( #WINDOW/8( family tree )  #WINDOW/8( obama family ) ) )
+4:#AND( toilet )
+5:#WAND( 0.7 #AND( mitchell college ) 0.2 #AND( #NEAR/1( mitchell college ) ) 0.1 #AND( #WINDOW/8( mitchell college ) ) )
+6:#AND( kcs )
+7:#WAND( 0.7 #AND( air travel information ) 0.2 #AND( #NEAR/1( travel information )  #NEAR/1( air travel ) ) 0.1 #AND( #WINDOW/8( travel information )  #WINDOW/8( air travel ) ) )
+8:#AND( appraisals )
+9:#WAND( 0.7 #AND( used car parts ) 0.2 #AND( #NEAR/1( car parts )  #NEAR/1( used car ) ) 0.1 #AND( #WINDOW/8( car parts )  #WINDOW/8( used car ) ) )
+11:#WAND( 0.7 #AND( gmat prep classes ) 0.2 #AND( #NEAR/1( prep classes )  #NEAR/1( gmat prep ) ) 0.1 #AND( #WINDOW/8( prep classes )  #WINDOW/8( gmat prep ) ) )
+15:#WAND( 0.7 #AND( espn sports ) 0.2 #AND( #NEAR/1( espn sports ) ) 0.1 #AND( #WINDOW/8( espn sports ) ) )
+16:#WAND( 0.7 #AND( arizona game and fish ) 0.2 #AND( #NEAR/1( and fish )  #NEAR/1( game and )  #NEAR/1( arizona game ) ) 0.1 #AND( #WINDOW/8( and fish )  #WINDOW/8( game and )  #WINDOW/8( arizona game ) ) )
+17:#WAND( 0.7 #AND( poker tournaments ) 0.2 #AND( #NEAR/1( poker tournaments ) ) 0.1 #AND( #WINDOW/8( poker tournaments ) ) )
+18:#WAND( 0.7 #AND( wedding budget calculator ) 0.2 #AND( #NEAR/1( budget calculator )  #NEAR/1( wedding budget ) ) 0.1 #AND( #WINDOW/8( budget calculator )  #WINDOW/8( wedding budget ) ) )
+21:#AND( volvo )
+22:#WAND( 0.7 #AND( rick warren ) 0.2 #AND( #NEAR/1( rick warren ) ) 0.1 #AND( #WINDOW/8( rick warren ) ) )
+28:#AND( inuyasha )
+29:#WAND( 0.7 #AND( ps 2 games ) 0.2 #AND( #NEAR/1( 2 games )  #NEAR/1( ps 2 ) ) 0.1 #AND( #WINDOW/8( 2 games )  #WINDOW/8( ps 2 ) ) )
+30:#WAND( 0.7 #AND( diabetes education ) 0.2 #AND( #NEAR/1( diabetes education ) ) 0.1 #AND( #WINDOW/8( diabetes education ) ) )
+37:#WAND( 0.7 #AND( pampered chef ) 0.2 #AND( #NEAR/1( pampered chef ) ) 0.1 #AND( #WINDOW/8( pampered chef ) ) )
+38:#WAND( 0.7 #AND( dogs for adoption ) 0.2 #AND( #NEAR/1( for adoption )  #NEAR/1( dogs for ) ) 0.1 #AND( #WINDOW/8( for adoption )  #WINDOW/8( dogs for ) ) )
+40:#AND( michworks )
+42:#WAND( 0.7 #AND( the music man ) 0.2 #AND( #NEAR/1( music man )  #NEAR/1( the music ) ) 0.1 #AND( #WINDOW/8( music man )  #WINDOW/8( the music ) ) )
+45:#WAND( 0.7 #AND( solar panels ) 0.2 #AND( #NEAR/1( solar panels ) ) 0.1 #AND( #WINDOW/8( solar panels ) ) )
+47:#WAND( 0.7 #AND( indexed annuity ) 0.2 #AND( #NEAR/1( indexed annuity ) ) 0.1 #AND( #WINDOW/8( indexed annuity ) ) )
+48:#WAND( 0.7 #AND( wilson antenna ) 0.2 #AND( #NEAR/1( wilson antenna ) ) 0.1 #AND( #WINDOW/8( wilson antenna ) ) )
+49:#WAND( 0.7 #AND( flame designs ) 0.2 #AND( #NEAR/1( flame designs ) ) 0.1 #AND( #WINDOW/8( flame designs ) ) )
+ 
